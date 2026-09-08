@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeRoute — School Route</title>
     <script src="https://cdn.tailwindcss.com"></script>
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -21,13 +24,38 @@
         .safety-card { margin: 12px 16px; padding: 16px; background: #f0fdf4; border-radius: 12px; border: 2px solid #bbf7d0; }
         .check-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
         .section-desc { padding: 8px 16px; font-size: 12px; color: #6b7280; line-height: 1.5; border-bottom: 1px solid #f3f4f6; }
+        .sidebar-toggle {
+            position: fixed; top: 12px; left: 12px; z-index: 1001;
+            width: 40px; height: 40px; border-radius: 8px;
+            background: white; border: 2px solid #e5e7eb;
+            cursor: pointer; display: none; font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%; height: auto; max-height: 55vh;
+                bottom: 0; top: auto; left: 0;
+                transform: translateY(0);
+                border-radius: 16px 16px 0 0;
+                transition: transform 0.3s ease;
+            }
+            .sidebar.collapsed { transform: translateY(calc(100% - 50px)); }
+            .sidebar-toggle { display: block; }
+            #map { height: 55vh; }
+        }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar" id="sidebar">
         <div class="header-bar">
-            <h1 style="font-size:18px;">🛡️ SafeRoute</h1>
-            <p style="font-size:11px; opacity:0.8;">School Route Mode 🏫</p>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <h1 style="font-size:18px;">🛡️ SafeRoute</h1>
+                    <p style="font-size:11px; opacity:0.8;">School Route Mode 🏫</p>
+                </div>
+                <span style="font-size:11px; opacity:0.7; cursor:pointer;" onclick="toggleSidebar()">✕</span>
+            </div>
         </div>
         <div class="nav-links">
             <a href="/" class="nav-link">🗺️ Route</a>
@@ -145,9 +173,9 @@
             if (!input) return null;
             const l = input.toLowerCase().trim();
             const locs = {
-                'muj': [26.9124, 75.7873], 'manipal': [26.9124, 75.7873], 'manipal university': [26.9124, 75.7873],
+                'muj': [26.8467, 75.5667], 'manipal': [26.8467, 75.5667], 'manipal university': [26.8467, 75.5667], 'manipal university jaipur': [26.8467, 75.5667],
                 'dav': [26.9130, 75.7880], 'st xavier': [26.9160, 75.7840],
-                'railway': [26.9154, 75.7903], 'railway station': [26.9154, 75.7903], 'jaipur railway station': [26.9154, 75.7903],
+                'railway': [26.9154, 75.8189], 'railway station': [26.9154, 75.8189], 'jaipur railway station': [26.9154, 75.8189], 'jaipur junction': [26.9154, 75.8189],
                 'mi road': [26.9180, 75.7850], 'mansarovar': [26.8900, 75.7700],
                 'sms': [26.9180, 75.7880], 'sms hospital': [26.9180, 75.7880],
                 'sindhi camp': [26.9200, 75.7850], 'hawa mahal': [26.9239, 75.8267],
@@ -171,8 +199,13 @@
             return null;
         }
     </script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+    </script>
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7GKGMDe72vWEitMpeq02ePFs3XvSHI8U&libraries=places&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBbcgeM4hlHf7pOrKzYHGF6HjvVKr3g9dI&libraries=places&callback=initMap">
     </script>
 </body>
 </html>
