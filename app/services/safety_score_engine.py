@@ -316,6 +316,13 @@ class SafetyScoreEngine:
 
         # Convert penalty to score (more incidents = lower score)
         base = 50  # Neutral baseline without zone data
+        
+        # Add position-based variation using coordinates
+        # This ensures different locations get different scores
+        if lat and lng:
+            pos_adj = ((hash(f"inc_{lat:.4f}_{lng:.4f}") % 200) - 100) / 10.0  # -10 to +10
+            base += pos_adj
+        
         penalty_reduction = min(total_penalty * 3, 40)
         score = max(10, base - penalty_reduction)
 

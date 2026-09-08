@@ -50,6 +50,22 @@ def create_app():
                         conn.execute(text('ALTER TABLE incident ADD COLUMN location_name VARCHAR(256)'))
                         conn.commit()
                     print('[SafeRoute] Migrated: added location_name to incident')
+            if 'user' in existing:
+                columns = {col['name'] for col in inspector.get_columns('user')}
+                new_cols = {
+                    'email': 'VARCHAR(128)',
+                    'phone': 'VARCHAR(20)',
+                    'full_name': 'VARCHAR(128)',
+                    'home_lat': 'FLOAT',
+                    'home_lng': 'FLOAT',
+                    'last_login': 'DATETIME',
+                }
+                for col_name, col_type in new_cols.items():
+                    if col_name not in columns:
+                        with db.engine.connect() as conn:
+                            conn.execute(text(f'ALTER TABLE user ADD COLUMN {col_name} {col_type}'))
+                            conn.commit()
+                        print(f'[SafeRoute] Migrated: added {col_name} to user')
         except Exception as e:
             print(f'[SafeRoute] Table cleanup: {e}')
         db.create_all()

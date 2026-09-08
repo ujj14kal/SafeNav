@@ -969,7 +969,14 @@
                 .then(data => {
                     const el = document.getElementById('feedbackStats');
                     if (data.total > 0) {
-                        el.innerHTML = `👍 ${data.safe_count} safe • 👎 ${data.unsafe_count} unsafe (${data.net_sentiment})`;
+                        // Reverse geocode to get real location name
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                            const locationName = (status === 'OK' && results[0]) ? 
+                                results[0].formatted_address.split(',').slice(0, 2).join(', ') : 
+                                `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            el.innerHTML = `📍 ${locationName}<br>👍 ${data.safe_count} safe • 👎 ${data.unsafe_count} unsafe (${data.net_sentiment})`;
+                        });
                     } else {
                         el.textContent = 'No feedback yet for this area. Be the first!';
                     }

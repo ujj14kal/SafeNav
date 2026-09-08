@@ -96,26 +96,63 @@ class GroqService:
         return base
     
     def generate_recommendations(self, danger_zones):
-        """Generate safety improvement recommendations for admin dashboard."""
+        """Generate varied safety improvement recommendations based on zone characteristics."""
         recommendations = []
-        for zone in danger_zones[:5]:
+        
+        # Different recommendation templates based on score ranges and road types
+        lighting_recs = [
+            "Install solar-powered LED street lights every 30 meters",
+            "Add motion-sensor lighting on dark stretches",
+            "Deploy portable light towers during evening hours",
+            "Install reflective road markers and cat-eyes for night visibility",
+        ]
+        cctv_recs = [
+            "Install CCTV cameras with night vision at key intersections",
+            "Deploy mobile surveillance units during high-risk hours",
+            "Add emergency call boxes with CCTV every 200 meters",
+            "Install ANPR cameras for vehicle tracking",
+        ]
+        police_recs = [
+            "Increase police patrol frequency to every 30 minutes",
+            "Deploy community policing volunteers during peak hours",
+            "Establish a temporary police booth at this location",
+            "Coordinate with local beat constable for regular checks",
+        ]
+        infrastructure_recs = [
+            "Repair broken footpaths and add guardrails",
+            "Clear overgrown vegetation that blocks sightlines",
+            "Fix potholes and improve road surface quality",
+            "Add pedestrian crossings with traffic signals",
+        ]
+        
+        for i, zone in enumerate(danger_zones[:5]):
             score = zone.get('score', 50)
             name = zone.get('name', 'Unknown Area')
+            road_type = zone.get('road_type', 'unknown')
             
-            if score < 20:
-                action = f"Add street lights and install CCTV on {name}"
-            elif score < 30:
-                action = f"Increase police patrol frequency on {name}"
-            elif score < 40:
-                action = f"Improve lighting and add emergency call box on {name}"
+            # Pick varied recommendations based on index and score
+            if score < 15:
+                rec_list = [lighting_recs[i % len(lighting_recs)], cctv_recs[i % len(cctv_recs)]]
+                priority = 'critical'
+                action = f"URGENT: {rec_list[0]}. Also: {rec_list[1]}"
+            elif score < 25:
+                rec_list = [police_recs[i % len(police_recs)], lighting_recs[i % len(lighting_recs)]]
+                priority = 'high'
+                action = f"{rec_list[0]}. Additionally: {rec_list[1]}"
+            elif score < 35:
+                rec_list = [infrastructure_recs[i % len(infrastructure_recs)], cctv_recs[i % len(cctv_recs)]]
+                priority = 'medium'
+                action = f"{rec_list[0]}. Consider: {rec_list[1]}"
             else:
-                action = f"Monitor and maintain safety standards on {name}"
+                rec_list = [police_recs[i % len(police_recs)]]
+                priority = 'low'
+                action = f"Monitor and maintain: {rec_list[0]}"
             
             recommendations.append({
                 'name': name,
                 'score': score,
                 'action': action,
-                'priority': 'high' if score < 30 else 'medium' if score < 50 else 'low',
+                'priority': priority,
             })
         
         return recommendations

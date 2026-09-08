@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 venv/
 .env.local
+instance/
+uploads/
+app/data/cache/

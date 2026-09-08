@@ -223,20 +223,8 @@
                     document.getElementById('moderateCount').textContent = moderateCount;
                     document.getElementById('dangerCount').textContent = dangerCount;
 
-                    // Google Maps native heatmap layer (wrapped in try-catch)
-                    try {
-                        if (heatData.length > 0) {
-                            heatmapLayer = new google.maps.visualization.HeatmapLayer({
-                                data: heatData,
-                                map: map,
-                                radius: 50,
-                                opacity: 0.5,
-                                dissipating: true,
-                            });
-                        }
-                    } catch(e) {
-                        console.warn('HeatmapLayer error:', e.message);
-                    }
+                    // Stats updated — road lines already show as colored heatmap
+                    // (Google Maps HeatmapLayer deprecated in v3.65+)
                 });
 
             // Load danger zones
@@ -266,7 +254,7 @@
         });
     </script>
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7GKGMDe72vWEitMpeq02ePFs3XvSHI8U&callback=initMap&libraries=visualization">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7GKGMDe72vWEitMpeq02ePFs3XvSHI8U&callback=initMap">
     </script>
 </body>
 </html>
