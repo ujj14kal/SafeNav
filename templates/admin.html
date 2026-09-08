@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute — City Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8f9fa; }
+        .header-bar { background: linear-gradient(135deg, #6C4CE0, #8B5CF6); color: white; padding: 16px 24px; }
+        .nav-links { display: flex; gap: 8px; padding: 8px 24px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .nav-link { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #6C4CE0; background: #f0edff; text-decoration: none; }
+        .nav-link:hover { background: #6C4CE0; color: white; }
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 16px 24px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .stat-value { font-size: 28px; font-weight: 800; color: #6C4CE0; }
+        .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px 24px; }
+        .panel { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+        .panel-header { padding: 16px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #f3f4f6; }
+        .danger-item { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+        .rec-item { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
+        .rec-action { font-size: 13px; color: #374151; margin-top: 4px; }
+        @media (max-width: 768px) { .stats-bar { grid-template-columns: 1fr 1fr; } .content-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <h1 style="font-size:18px;">🛡️ SafeRoute — City Admin Dashboard</h1>
+        <p style="font-size:11px; opacity:0.8;">Jaipur Safety Intelligence Platform</p>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link">🗺️ Route</a>
+        <a href="/heatmap" class="nav-link">🔥 Heatmap</a>
+        <a href="/school" class="nav-link">🏫 School</a>
+        <a href="/admin" class="nav-link" style="background:#6C4CE0;color:white;">📊 Admin</a>
+    </div>
+    <div class="stats-bar">
+        <div class="stat-card"><div class="stat-value" id="avgScore">-</div><div class="stat-label">Avg Safety Score</div></div>
+        <div class="stat-card"><div class="stat-value" id="dangerCount" style="color:#FF4757;">-</div><div class="stat-label">Danger Zones</div></div>
+        <div class="stat-card"><div class="stat-value" id="reportCount" style="color:#FFA502;">-</div><div class="stat-label">Community Reports</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:#2ED573;">94%</div><div class="stat-label">Road Coverage</div></div>
+    </div>
+    <div class="content-grid">
+        <div class="panel">
+            <div class="panel-header">🔴 Top 10 Most Dangerous Zones</div>
+            <div id="dangerZones"></div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">🤖 AI Safety Recommendations</div>
+            <div id="recommendations"></div>
+        </div>
+    </div>
+    <script>
+        fetch('/api/admin/stats?hour=22').then(r => r.json()).then(data => {
+            document.getElementById('avgScore').textContent = data.avg_score || '-';
+            document.getElementById('dangerCount').textContent = (data.danger_zones || []).length;
+            document.getElementById('reportCount').textContent = data.total_reports || 0;
+
+            document.getElementById('dangerZones').innerHTML = (data.danger_zones || []).slice(0, 10).map(z => {
+                const color = z.score < 20 ? '#FF4757' : z.score < 30 ? '#FFA502' : '#E8D44D';
+                return `<div class="danger-item">
+                    <div><div style="font-size:13px;font-weight:600;">${z.name}</div><div style="font-size:11px;color:#6b7280;">${z.road_type} road</div></div>
+                    <span style="font-weight:700;background:${color}20;color:${color};padding:4px 10px;border-radius:6px;">${z.score}</span>
+                </div>`;
+            }).join('') || '<div style="padding:16px;color:#6b7280;">No danger zones detected</div>';
+
+            document.getElementById('recommendations').innerHTML = (data.recommendations || []).map(r => {
+                return `<div class="rec-item">
+                    <div style="font-size:13px;font-weight:600;">${r.name} (Score: ${r.score})</div>
+                    <div class="rec-action">💡 ${r.action}</div>
+                </div>`;
+            }).join('') || '<div style="padding:16px;color:#6b7280;">No recommendations</div>';
+        });
+    </script>
+</body>
+</html>
