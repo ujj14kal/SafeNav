@@ -3,284 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeRoute — City Admin Dashboard</title>
+    <title>SafeRoute — Safety Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8f9fa; }
-        .header-bar { background: linear-gradient(135deg, #6C4CE0, #8B5CF6); color: white; padding: 16px 24px; }
-        .nav-links { display: flex; gap: 8px; padding: 8px 24px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .nav-link { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #6C4CE0; background: #f0edff; text-decoration: none; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; overflow-x: hidden; }
+        .header-bar { background: linear-gradient(135deg, #6C4CE0, #8B5CF6); color: white; padding: 16px 20px; }
+        .nav-links { display: flex; gap: 8px; padding: 8px 16px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow-x: auto; }
+        .nav-link { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #6C4CE0; background: #f0edff; text-decoration: none; white-space: nowrap; }
         .nav-link:hover { background: #6C4CE0; color: white; }
-        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 16px 24px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .stat-value { font-size: 28px; font-weight: 800; color: #6C4CE0; }
-        .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
-        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px 24px; }
-        .panel { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
-        .panel-header { padding: 16px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #f3f4f6; }
-        .danger-item { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+        .section-desc { padding: 10px 16px; font-size: 12px; color: #6b7280; line-height: 1.5; background: white; border-bottom: 1px solid #e5e7eb; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
+        .stat-card {
+            background: white; padding: 16px; border-radius: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: relative; overflow: hidden;
+        }
+        .stat-card::after {
+            content: ''; position: absolute; top: 0; right: 0; width: 60px; height: 60px;
+            border-radius: 0 0 0 60px; opacity: 0.08;
+        }
+        .stat-card.purple::after { background: #6C4CE0; }
+        .stat-card.red::after { background: #FF4757; }
+        .stat-card.orange::after { background: #FFA502; }
+        .stat-card.green::after { background: #2ED573; }
+        .stat-icon { font-size: 28px; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 800; }
+        .stat-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+        .stat-sub { font-size: 10px; color: #9ca3af; margin-top: 4px; }
+        .panel {
+            background: white; border-radius: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin: 0 16px 16px; overflow: hidden;
+        }
+        .panel-header {
+            padding: 14px 16px; font-weight: 700; font-size: 14px;
+            border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 8px;
+        }
+        .danger-item {
+            padding: 12px 16px; border-bottom: 1px solid #f3f4f6;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .danger-item:last-child { border-bottom: none; }
+        .score-badge {
+            font-weight: 700; padding: 4px 12px; border-radius: 8px; font-size: 13px;
+        }
         .rec-item { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
-        .rec-action { font-size: 13px; color: #374151; margin-top: 4px; }
-        .section-desc { padding: 8px 24px; font-size: 12px; color: #6b7280; line-height: 1.5; background: #f0edff; }
-        .login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 3000; display: flex;
-            justify-content: center; align-items: center;
-        }
-        .login-card {
-            background: white; border-radius: 16px; padding: 32px;
-            max-width: 400px; width: 90%; text-align: center;
-        }
+        .rec-item:last-child { border-bottom: none; }
+        .tab-bar { display: flex; gap: 6px; padding: 12px 16px; overflow-x: auto; }
         .tab-btn {
-            padding: 8px 16px; border-radius: 6px; font-size: 12px;
+            padding: 8px 14px; border-radius: 20px; font-size: 12px;
             font-weight: 600; border: 2px solid #e5e7eb; background: white;
-            cursor: pointer; transition: all 0.2s;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
         }
         .tab-btn.active { border-color: #6C4CE0; background: #f0edff; color: #6C4CE0; }
-        @media (max-width: 768px) { .stats-bar { grid-template-columns: 1fr 1fr; } .content-grid { grid-template-columns: 1fr; } }
+        .tab-btn:hover { border-color: #6C4CE0; }
+        .empty-state { padding: 40px 16px; text-align: center; color: #9ca3af; }
+        .empty-state .icon { font-size: 40px; margin-bottom: 8px; }
+        .sidebar-toggle {
+            position: fixed; top: 12px; left: 12px; z-index: 1001;
+            width: 40px; height: 40px; border-radius: 8px;
+            background: white; border: 2px solid #e5e7eb;
+            cursor: pointer; display: none; font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .time-toggle {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 14px; background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin: 0 16px 8px;
+            font-size: 12px; color: #6b7280;
+        }
+        .time-toggle select {
+            border: 2px solid #e5e7eb; border-radius: 6px; padding: 4px 8px;
+            font-size: 12px; font-weight: 600; color: #6C4CE0; outline: none;
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+            .stat-card { padding: 12px; }
+            .stat-value { font-size: 22px; }
+            .stat-icon { font-size: 22px; }
+            .panel { margin: 0 12px 12px; }
+            .tab-bar { padding: 8px 12px; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
+            .stat-card { padding: 10px; }
+            .stat-value { font-size: 20px; }
+        }
     </style>
 </head>
 <body>
-    <!-- Login Overlay -->
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-card">
-            <h2 style="font-size:24px; font-weight:700; color:#6C4CE0; margin-bottom:8px;">🛡️ SafeRoute Admin</h2>
-            <p style="font-size:13px; color:#6b7280; margin-bottom:24px;">City Safety Intelligence Dashboard</p>
-            <input type="text" id="adminUsername" placeholder="Username" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; margin-bottom:10px;">
-            <input type="password" id="adminPassword" placeholder="Password" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; margin-bottom:16px;">
-            <button onclick="adminLogin()" style="width:100%; padding:12px; background:#6C4CE0; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">Login</button>
-            <div id="loginError" style="color:#FF4757; font-size:12px; margin-top:10px;"></div>
-            <p style="font-size:11px; color:#9ca3af; margin-top:12px;">Default: admin / admin123</p>
-        </div>
-    </div>
-
-    <!-- Main Dashboard (hidden until login) -->
-    <div id="dashboard" style="display:none;">
-        <div class="header-bar">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <h1 style="font-size:18px;">🛡️ SafeRoute — City Admin Dashboard</h1>
-                    <p style="font-size:11px; opacity:0.8;">Jaipur Safety Intelligence Platform</p>
-                </div>
-                <span id="adminUser" style="font-size:12px; opacity:0.8;"></span>
-            </div>
-        </div>
-        <div class="nav-links">
-            <a href="/" class="nav-link">🗺️ Route</a>
-            <a href="/heatmap" class="nav-link">🔥 Heatmap</a>
-            <a href="/school" class="nav-link">🏫 School</a>
-            <a href="/admin" class="nav-link" style="background:#6C4CE0;color:white;">📊 Admin</a>
-        </div>
-        <div class="section-desc">
-            📊 <strong>Admin Dashboard</strong> — City-wide safety intelligence dashboard. View danger zones, community reports, recordings, and AI-generated recommendations for infrastructure improvements.
-        </div>
-
-        <div class="stats-bar">
-            <div class="stat-card"><div class="stat-value" id="avgScore">-</div><div class="stat-label">Avg Safety Score</div></div>
-            <div class="stat-card"><div class="stat-value" id="dangerCount" style="color:#FF4757;">-</div><div class="stat-label">Danger Zones</div></div>
-            <div class="stat-card"><div class="stat-value" id="reportCount" style="color:#FFA502;">-</div><div class="stat-label">Incident Reports</div></div>
-            <div class="stat-card"><div class="stat-value" id="feedbackCount" style="color:#2ED573;">-</div><div class="stat-label">User Feedback</div></div>
-        </div>
-
-        <!-- Tab buttons for different data views -->
-        <div style="padding: 0 24px 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="tab-btn active" onclick="showTab('overview')">📊 Overview</button>
-            <button class="tab-btn" onclick="showTab('incidents')">⚠️ Incidents</button>
-            <button class="tab-btn" onclick="showTab('feedback')">👍 Feedback</button>
-            <button class="tab-btn" onclick="showTab('recordings')">🎤 Recordings</button>
-            <button class="tab-btn" onclick="showTab('sos')">🚨 SOS History</button>
-        </div>
-
-        <!-- Overview Tab -->
-        <div id="tab-overview" class="content-grid">
-            <div class="panel">
-                <div class="panel-header">🔴 Top 10 Most Dangerous Zones</div>
-                <div id="dangerZones"></div>
-            </div>
-            <div class="panel">
-                <div class="panel-header">🤖 AI Safety Recommendations</div>
-                <div id="recommendations"></div>
-            </div>
-        </div>
-
-        <!-- Incidents Tab -->
-        <div id="tab-incidents" style="display:none; padding: 0 24px 24px;">
-            <div class="panel">
-                <div class="panel-header">⚠️ All Incident Reports (Police Evidence Database)</div>
-                <div id="incidentsList" style="max-height: 500px; overflow-y: auto;"></div>
-            </div>
-        </div>
-
-        <!-- Feedback Tab -->
-        <div id="tab-feedback" style="display:none; padding: 0 24px 24px;">
-            <div class="panel">
-                <div class="panel-header">👍 User Feedback Log</div>
-                <div id="feedbackList" style="max-height: 500px; overflow-y: auto;"></div>
-            </div>
-        </div>
-
-        <!-- Recordings Tab -->
-        <div id="tab-recordings" style="display:none; padding: 0 24px 24px;">
-            <div class="panel">
-                <div class="panel-header">🎤 Audio Recordings</div>
-                <div id="recordingsList" style="max-height: 500px; overflow-y: auto;"></div>
-            </div>
-        </div>
-
-        <!-- SOS Tab -->
-        <div id="tab-sos" style="display:none; padding: 0 24px 24px;">
-            <div class="panel">
-                <div class="panel-header">🚨 SOS Event History</div>
-                <div id="sosList" style="max-height: 500px; overflow-y: auto;"></div>
+    <div class="header-bar">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h1 style="font-size:18px;">&#128737; SafeRoute</h1>
+                <p style="font-size:11px; opacity:0.8;">Safety Dashboard &#128202;</p>
             </div>
         </div>
     </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link">&#128506; Route</a>
+        <a href="/heatmap" class="nav-link">&#128293; Heatmap</a>
+        <a href="/school" class="nav-link">&#127979; School</a>
+        <a href="/admin" class="nav-link" style="background:#6C4CE0;color:white;">&#128202; Dashboard</a>
+    </div>
+    <div class="section-desc">
+        &#128202; <strong>Dashboard</strong> — City-wide safety overview. View danger zones, incident reports, community feedback, and AI-powered safety recommendations for Jaipur.
+    </div>
+
+    <!-- Time Period Toggle -->
+    <div class="time-toggle">
+        <span>&#9200; Viewing:</span>
+        <select id="timePeriod" onchange="loadDashboard()">
+            <option value="8">Morning (8 AM)</option>
+            <option value="12" selected>Afternoon (12 PM)</option>
+            <option value="18">Evening (6 PM)</option>
+            <option value="22">Night (10 PM)</option>
+        </select>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card purple">
+            <div class="stat-icon">&#128737;</div>
+            <div class="stat-value" style="color:#6C4CE0;" id="avgScore">-</div>
+            <div class="stat-label">City Safety Score</div>
+            <div class="stat-sub">out of 100</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-icon">&#128308;</div>
+            <div class="stat-value" style="color:#FF4757;" id="dangerCount">-</div>
+            <div class="stat-label">Danger Zones</div>
+            <div class="stat-sub">score below 40</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-icon">&#9888;</div>
+            <div class="stat-value" style="color:#FFA502;" id="reportCount">-</div>
+            <div class="stat-label">Incident Reports</div>
+            <div class="stat-sub">active alerts</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon">&#128077;</div>
+            <div class="stat-value" style="color:#2ED573;" id="feedbackCount">-</div>
+            <div class="stat-label">Community Feedback</div>
+            <div class="stat-sub">safe/unsafe votes</div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="showTab('overview', this)">&#128202; Overview</button>
+        <button class="tab-btn" onclick="showTab('incidents', this)">&#9888; Incidents</button>
+        <button class="tab-btn" onclick="showTab('feedback', this)">&#128077; Feedback</button>
+        <button class="tab-btn" onclick="showTab('sos', this)">&#128680; SOS</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="tab-overview">
+        <!-- Danger Zones Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:#FF4757;">&#128308;</span> Most Dangerous Zones
+            </div>
+            <div id="dangerZones">
+                <div class="empty-state"><div class="icon">&#128202;</div>Loading...</div>
+            </div>
+        </div>
+
+        <!-- AI Recommendations -->
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:#6C4CE0;">&#129302;</span> AI Safety Recommendations
+            </div>
+            <div id="recommendations">
+                <div class="empty-state"><div class="icon">&#129302;</div>Loading...</div>
+            </div>
+        </div>
+
+        <!-- Report Breakdown -->
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:#FFA502;">&#128203;</span> Report Categories
+            </div>
+            <div id="reportBreakdown" style="padding:16px;"></div>
+        </div>
+    </div>
+
+    <!-- Incidents Tab -->
+    <div id="tab-incidents" style="display:none;">
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:#FFA502;">&#9888;</span> Incident Reports
+                <span style="margin-left:auto; font-size:11px; color:#9ca3af; font-weight:400;" id="incidentCount"></span>
+            </div>
+            <div id="incidentsList" style="max-height:60vh; overflow-y:auto;">
+                <div class="empty-state"><div class="icon">&#9888;</div>Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Tab -->
+    <div id="tab-feedback" style="display:none;">
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:#2ED573;">&#128077;</span> Community Feedback
+                <span style="margin-left:auto; font-size:11px; color:#9ca3af; font-weight:400;" id="feedbackTotal"></span>
+            </div>
+            <div id="feedbackList" style="max-height:60vh; overflow-y:auto;">
+                <div class="empty-state"><div class="icon">&#128077;</div>Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOS Tab -->
+    <div id="tab-sos" style="display:none;">
+        <div class="panel">
+            <div class="panel-header">
+                <span style="color:#FF4757;">&#128680;</span> SOS Emergency History
+            </div>
+            <div id="sosList" style="max-height:60vh; overflow-y:auto;">
+                <div class="empty-state"><div class="icon">&#128680;</div>Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="height:24px;"></div>
 
     <script>
-        function adminLogin() {
-            const username = document.getElementById('adminUsername').value.trim();
-            const password = document.getElementById('adminPassword').value.trim();
-            if (!username || !password) {
-                document.getElementById('loginError').textContent = 'Please enter username and password';
-                return;
-            }
-            fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'authenticated') {
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('dashboard').style.display = 'block';
-                    document.getElementById('adminUser').textContent = `👤 ${data.username}`;
-                    loadDashboard();
-                } else {
-                    document.getElementById('loginError').textContent = data.error || 'Invalid credentials';
-                }
-            })
-            .catch(() => {
-                document.getElementById('loginError').textContent = 'Connection error';
+        function showTab(tabName, btn) {
+            ['overview', 'incidents', 'feedback', 'sos'].forEach(t => {
+                const el = document.getElementById('tab-' + t);
+                if (el) el.style.display = t === tabName ? 'block' : 'none';
             });
-        }
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
 
-        // Allow Enter key to login
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && (e.target.id === 'adminUsername' || e.target.id === 'adminPassword')) {
-                adminLogin();
-            }
-        });
-
-        function showTab(tabName) {
-            ['overview', 'incidents', 'feedback', 'recordings', 'sos'].forEach(t => {
-                document.getElementById(`tab-${t}`).style.display = t === tabName ? (t === 'overview' ? 'grid' : 'block') : 'none';
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Load tab-specific data
             if (tabName === 'incidents') loadIncidents();
             if (tabName === 'feedback') loadFeedback();
-            if (tabName === 'recordings') loadRecordings();
             if (tabName === 'sos') loadSOSHistory();
         }
 
         function loadDashboard() {
-            fetch('/api/admin/stats?hour=22').then(r => r.json()).then(data => {
-                document.getElementById('avgScore').textContent = data.avg_score || '-';
-                document.getElementById('dangerCount').textContent = (data.danger_zones || []).length;
-                document.getElementById('reportCount').textContent = data.total_reports || 0;
-                document.getElementById('feedbackCount').textContent = data.total_feedback || 0;
+            const hour = document.getElementById('timePeriod').value;
 
-                document.getElementById('dangerZones').innerHTML = (data.danger_zones || []).slice(0, 10).map(z => {
-                    const color = z.score < 20 ? '#FF4757' : z.score < 30 ? '#FFA502' : '#E8D44D';
-                    const zoneLabel = z.zone_name ? ` — ${z.zone_name}` : '';
-                    return `<div class="danger-item">
-                        <div><div style="font-size:13px;font-weight:600;">${z.name}${zoneLabel}</div><div style="font-size:11px;color:#6b7280;">${z.road_type} road</div></div>
-                        <span style="font-weight:700;background:${color}20;color:${color};padding:4px 10px;border-radius:6px;">${z.score}</span>
-                    </div>`;
-                }).join('') || '<div style="padding:16px;color:#6b7280;">No danger zones detected</div>';
+            fetch('/api/admin/stats?hour=' + hour)
+                .then(r => r.json())
+                .then(data => {
+                    // Stats
+                    const avg = data.avg_score || 0;
+                    document.getElementById('avgScore').textContent = avg;
+                    document.getElementById('dangerCount').textContent = (data.danger_zones || []).filter(z => z.score < 40).length;
+                    document.getElementById('reportCount').textContent = data.total_reports || 0;
+                    document.getElementById('feedbackCount').textContent = data.total_feedback || 0;
 
-                document.getElementById('recommendations').innerHTML = (data.recommendations || []).map(r => {
-                    return `<div class="rec-item">
-                        <div style="font-size:13px;font-weight:600;">${r.name} (Score: ${r.score})</div>
-                        <div class="rec-action">💡 ${r.action}</div>
-                    </div>`;
-                }).join('') || '<div style="padding:16px;color:#6b7280;">No recommendations</div>';
-            });
+                    // Color the avg score
+                    const scoreEl = document.getElementById('avgScore');
+                    if (avg >= 70) scoreEl.style.color = '#2ED573';
+                    else if (avg >= 50) scoreEl.style.color = '#FFA502';
+                    else scoreEl.style.color = '#FF4757';
+
+                    // Danger Zones
+                    const zones = (data.danger_zones || []).slice(0, 8);
+                    document.getElementById('dangerZones').innerHTML = zones.length ? zones.map(z => {
+                        const color = z.score < 20 ? '#FF4757' : z.score < 30 ? '#FF6B6B' : z.score < 40 ? '#FFA502' : '#E8D44D';
+                        const bg = color + '12';
+                        const desc = z.description || '';
+                        return '<div class="danger-item">' +
+                            '<div style="flex:1;min-width:0;">' +
+                                '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + z.name + '</div>' +
+                                '<div style="font-size:11px;color:#6b7280;">' + z.road_type + ' road</div>' +
+                                (desc ? '<div style="font-size:10px;color:#9ca3af;margin-top:2px;">' + desc + '</div>' : '') +
+                            '</div>' +
+                            '<span class="score-badge" style="background:' + bg + ';color:' + color + ';">' + z.score + '</span>' +
+                        '</div>';
+                    }).join('') : '<div class="empty-state"><div class="icon">&#128737;</div>No danger zones at this hour</div>';
+
+                    // AI Recommendations
+                    const recs = data.recommendations || [];
+                    document.getElementById('recommendations').innerHTML = recs.length ? recs.map(r => {
+                        return '<div class="rec-item">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                                '<div style="font-size:13px;font-weight:600;">' + r.name + '</div>' +
+                                '<span class="score-badge" style="background:#FF475712;color:#FF4757;font-size:11px;">' + r.score + '</span>' +
+                            '</div>' +
+                            '<div style="font-size:12px;color:#6C4CE0;margin-top:6px;padding:8px;background:#f0edff;border-radius:8px;">&#128161; ' + r.action + '</div>' +
+                        '</div>';
+                    }).join('') : '<div class="empty-state"><div class="icon">&#129302;</div>No recommendations available</div>';
+
+                    // Report Breakdown
+                    const stats = data.report_stats || {};
+                    const cats = Object.entries(stats);
+                    document.getElementById('reportBreakdown').innerHTML = cats.length ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + cats.map(([key, val]) => {
+                        return '<div style="padding:12px;background:#f8f9fa;border-radius:10px;text-align:center;">' +
+                            '<div style="font-size:24px;">' + (val.icon || '&#128203;') + '</div>' +
+                            '<div style="font-size:18px;font-weight:700;color:#374151;">' + val.count + '</div>' +
+                            '<div style="font-size:11px;color:#6b7280;">' + val.label + '</div>' +
+                        '</div>';
+                    }).join('') + '</div>' : '<div style="text-align:center;color:#9ca3af;font-size:13px;">No reports yet</div>';
+                })
+                .catch(() => {
+                    document.getElementById('dangerZones').innerHTML = '<div class="empty-state"><div class="icon">&#128202;</div>Could not load data</div>';
+                });
         }
 
         function loadIncidents() {
             fetch('/api/admin/incidents').then(r => r.json()).then(data => {
-                document.getElementById('incidentsList').innerHTML = (data.incidents || []).slice(0, 50).map(inc => {
-                    const severityColor = { low: '#2ED573', medium: '#FFA502', high: '#FF4757', critical: '#dc2626' }[inc.severity] || '#6b7280';
-                    return `<div class="danger-item" style="flex-direction:column; align-items:flex-start;">
-                        <div style="display:flex; justify-content:space-between; width:100%;">
-                            <div>
-                                <div style="font-size:13px; font-weight:600;">${inc.type.replace(/_/g, ' ')}</div>
-                                <div style="font-size:11px; color:#6b7280;">${inc.category} • ${inc.lat?.toFixed(4)}, ${inc.lng?.toFixed(4)}</div>
-                            </div>
-                            <span style="background:${severityColor}20; color:${severityColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">${inc.severity}</span>
-                        </div>
-                        <div style="font-size:11px; color:#9ca3af; margin-top:4px;">${inc.timestamp || 'No timestamp'} • ${inc.description || ''}</div>
-                    </div>`;
-                }).join('') || '<div style="padding:16px; color:#6b7280;">No incidents recorded</div>';
+                const incidents = data.incidents || [];
+                document.getElementById('incidentCount').textContent = incidents.length + ' total';
+                document.getElementById('incidentsList').innerHTML = incidents.length ? incidents.slice(0, 30).map(inc => {
+                    const severityColors = { low: '#2ED573', medium: '#FFA502', high: '#FF4757', critical: '#dc2626' };
+                    const color = severityColors[inc.severity] || '#6b7280';
+                    const time = inc.timestamp ? new Date(inc.timestamp).toLocaleString() : '';
+                    return '<div class="danger-item" style="flex-direction:column;align-items:flex-start;">' +
+                        '<div style="display:flex;justify-content:space-between;width:100%;">' +
+                            '<div style="flex:1;">' +
+                                '<div style="font-size:13px;font-weight:600;">' + (inc.type || '').replace(/_/g, ' ') + '</div>' +
+                                '<div style="font-size:11px;color:#6b7280;">' + (inc.category || '') + (inc.location_name ? ' \u2022 ' + inc.location_name : '') + '</div>' +
+                            '</div>' +
+                            '<span style="background:' + color + '15;color:' + color + ';padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + (inc.severity || 'unknown') + '</span>' +
+                        '</div>' +
+                        (inc.description ? '<div style="font-size:11px;color:#6b7280;margin-top:4px;">' + inc.description + '</div>' : '') +
+                        '<div style="font-size:10px;color:#9ca3af;margin-top:4px;">' + time + '</div>' +
+                    '</div>';
+                }).join('') : '<div class="empty-state"><div class="icon">&#9989;</div>No incidents recorded</div>';
             });
         }
 
         function loadFeedback() {
             fetch('/api/admin/feedback').then(r => r.json()).then(data => {
-                document.getElementById('feedbackList').innerHTML = (data.feedback || []).slice(0, 50).map(fb => {
-                    const icon = fb.feedback_type === 'safe' ? '👍' : '👎';
-                    const color = fb.feedback_type === 'safe' ? '#2ED573' : '#FF4757';
-                    return `<div class="danger-item">
-                        <div>
-                            <div style="font-size:13px;">${icon} <span style="font-weight:600; color:${color};">${fb.feedback_type.toUpperCase()}</span></div>
-                            <div style="font-size:11px; color:#6b7280;">${fb.lat?.toFixed(4)}, ${fb.lng?.toFixed(4)}</div>
-                        </div>
-                        <div style="font-size:11px; color:#9ca3af;">${fb.timestamp || ''}</div>
-                    </div>`;
-                }).join('') || '<div style="padding:16px; color:#6b7280;">No feedback recorded</div>';
-            });
-        }
-
-        function loadRecordings() {
-            fetch('/api/recordings').then(r => r.json()).then(data => {
-                document.getElementById('recordingsList').innerHTML = (data.recordings || []).map(rec => {
-                    return `<div class="danger-item" style="flex-direction:column; align-items:flex-start;">
-                        <div style="display:flex; justify-content:space-between; width:100%;">
-                            <div>
-                                <div style="font-size:13px; font-weight:600;">🎤 Recording #${rec.id}</div>
-                                <div style="font-size:11px; color:#6b7280;">User: ${rec.user_id} • ${rec.lat?.toFixed(4)}, ${rec.lng?.toFixed(4)}</div>
-                            </div>
-                            <div style="font-size:11px; color:#6b7280;">
-                                ${rec.duration_seconds ? Math.round(rec.duration_seconds) + 's' : 'N/A'} •
-                                ${rec.file_size ? Math.round(rec.file_size / 1024) + 'KB' : 'N/A'}
-                            </div>
-                        </div>
-                        <div style="font-size:11px; color:#9ca3af; margin-top:4px;">${rec.timestamp || ''} ${rec.sos_id ? '• SOS: ' + rec.sos_id : ''}</div>
-                    </div>`;
-                }).join('') || '<div style="padding:16px; color:#6b7280;">No recordings stored</div>';
+                const feedback = data.feedback || [];
+                const safeCount = feedback.filter(f => f.feedback_type === 'safe').length;
+                const unsafeCount = feedback.filter(f => f.feedback_type === 'unsafe').length;
+                document.getElementById('feedbackTotal').textContent = safeCount + ' safe \u2022 ' + unsafeCount + ' unsafe';
+                document.getElementById('feedbackList').innerHTML = feedback.length ? feedback.slice(0, 30).map(fb => {
+                    const isSafe = fb.feedback_type === 'safe';
+                    const icon = isSafe ? '&#128077;' : '&#128078;';
+                    const color = isSafe ? '#2ED573' : '#FF4757';
+                    const time = fb.timestamp ? new Date(fb.timestamp).toLocaleString() : '';
+                    return '<div class="danger-item">' +
+                        '<div>' +
+                            '<div style="font-size:13px;">' + icon + ' <span style="font-weight:600;color:' + color + ';">' + (isSafe ? 'Safe' : 'Unsafe') + '</span></div>' +
+                            '<div style="font-size:11px;color:#6b7280;">' + (fb.lat || 0).toFixed(4) + ', ' + (fb.lng || 0).toFixed(4) + '</div>' +
+                        '</div>' +
+                        '<div style="font-size:10px;color:#9ca3af;">' + time + '</div>' +
+                    '</div>';
+                }).join('') : '<div class="empty-state"><div class="icon">&#128077;</div>No feedback yet</div>';
             });
         }
 
         function loadSOSHistory() {
             fetch('/api/admin/sos').then(r => r.json()).then(data => {
-                document.getElementById('sosList').innerHTML = (data.sos_history || []).map(sos => {
-                    const statusColor = sos.status === 'active' ? '#FF4757' : '#2ED573';
-                    return `<div class="danger-item">
-                        <div>
-                            <div style="font-size:13px; font-weight:600;">🚨 SOS ${sos.sos_id}</div>
-                            <div style="font-size:11px; color:#6b7280;">User: ${sos.user_id} • ${sos.lat?.toFixed(4)}, ${sos.lng?.toFixed(4)} • Type: ${sos.type}</div>
-                            <div style="font-size:11px; color:#9ca3af;">${sos.timestamp || ''} ${sos.resolved_at ? '→ Resolved: ' + sos.resolved_at : ''}</div>
-                        </div>
-                        <span style="background:${statusColor}20; color:${statusColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">${sos.status}</span>
-                    </div>`;
-                }).join('') || '<div style="padding:16px; color:#6b7280;">No SOS events recorded</div>';
+                const sosList = data.sos_history || [];
+                document.getElementById('sosList').innerHTML = sosList.length ? sosList.map(sos => {
+                    const isActive = sos.status === 'active';
+                    const color = isActive ? '#FF4757' : '#2ED573';
+                    const time = sos.timestamp ? new Date(sos.timestamp).toLocaleString() : '';
+                    return '<div class="danger-item">' +
+                        '<div style="flex:1;">' +
+                            '<div style="font-size:13px;font-weight:600;">&#128680; SOS ' + (sos.sos_id || '') + '</div>' +
+                            '<div style="font-size:11px;color:#6b7280;">User: ' + (sos.user_id || 'unknown') + '</div>' +
+                            '<div style="font-size:10px;color:#9ca3af;margin-top:2px;">' + time + '</div>' +
+                        '</div>' +
+                        '<span style="background:' + color + '15;color:' + color + ';padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + (sos.status || 'unknown') + '</span>' +
+                    '</div>';
+                }).join('') : '<div class="empty-state"><div class="icon">&#128680;</div>No SOS events recorded</div>';
             });
         }
+
+        // Load on page open
+        loadDashboard();
     </script>
 </body>
 </html>

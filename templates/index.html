@@ -317,9 +317,9 @@
         <!-- Help Center -->
         <div style="border-top: 2px solid #e5e7eb; margin-top: 4px;">
             <div class="section-desc" style="cursor:pointer; font-weight:700; color:#6C4CE0;" onclick="toggleHelp()">
-                ❓ Help Center <span id="helpArrow" style="float:right;">▼</span>
+                ❓ Help Center <span id="helpArrow" style="float:right;">▲</span>
             </div>
-            <div id="helpContent" style="display:none;">
+            <div id="helpContent" style="display:block;">
                 <div class="help-section">
                     <h4 style="font-size:13px; font-weight:700; margin-bottom:6px;">📞 Emergency Numbers</h4>
                     <div style="font-size:12px; line-height:2;">
@@ -498,13 +498,22 @@
             const fromInput = document.getElementById('searchFrom');
             const toInput = document.getElementById('searchTo');
 
+            const jaipurBounds = new google.maps.LatLngBounds(
+                new google.maps.LatLng(26.82, 75.72),
+                new google.maps.LatLng(27.00, 75.90)
+            );
+
             const fromAutocomplete = new google.maps.places.Autocomplete(fromInput, {
                 fields: ['geometry', 'name', 'formatted_address'],
                 componentRestrictions: { country: 'in' },
+                bounds: jaipurBounds,
+                strictBounds: false,
             });
             const toAutocomplete = new google.maps.places.Autocomplete(toInput, {
                 fields: ['geometry', 'name', 'formatted_address'],
                 componentRestrictions: { country: 'in' },
+                bounds: jaipurBounds,
+                strictBounds: false,
             });
 
             fromAutocomplete.addListener('place_changed', () => {
@@ -607,10 +616,11 @@
         function parseLocation(input, inputEl) {
             // Known Jaipur locations — checked FIRST so shortcuts like "muj" always work
             const locations = {
-                'muj': [26.9124, 75.7873], 'mu': [26.9124, 75.7873], 'manipal': [26.9124, 75.7873],
-                'manipal university': [26.9124, 75.7873],
-                'railway': [26.9154, 75.7903], 'station': [26.9154, 75.7903], 'railway station': [26.9154, 75.7903],
-                'jaipur railway station': [26.9154, 75.7903],
+                'muj': [26.8467, 75.5667], 'mu': [26.8467, 75.5667], 'manipal': [26.8467, 75.5667],
+                'manipal university': [26.8467, 75.5667],
+                'manipal university jaipur': [26.8467, 75.5667],
+                'railway': [26.9154, 75.8189], 'station': [26.9154, 75.8189], 'railway station': [26.9154, 75.8189],
+                'jaipur railway station': [26.9154, 75.8189], 'jaipur junction': [26.9154, 75.8189],
                 'mi road': [26.9180, 75.7850], 'mi': [26.9180, 75.7850],
                 'sindhi camp': [26.9200, 75.7850], 'sindhi': [26.9200, 75.7850],
                 'mansarovar': [26.8900, 75.7700], 'sms hospital': [26.9180, 75.7880],
@@ -651,9 +661,14 @@
         }
 
         // ─────────────────────────────────────────
-        // RENDER ROUTES
+        // RENDER ROUTES — uses Google Directions for real road paths
         // ─────────────────────────────────────────
+        let directionsRenderers = [];
+
         function renderRoutes(routes) {
+            // Clear previous routes
+            directionsRenderers.forEach(r => r.setMap(null));
+            directionsRenderers = [];
             routePolylines.forEach(p => p.setMap(null));
             markers.forEach(m => m.setMap(null));
             routePolylines = [];
@@ -661,97 +676,177 @@
 
             const container = document.getElementById('routesContainer');
             container.innerHTML = '';
-            const bounds = new google.maps.LatLngBounds();
 
+            if (!routes || routes.length === 0) return;
+
+            const startCoords = routes[0].coordinates[0];
+            const endCoords = routes[0].coordinates[routes[0].coordinates.length - 1];
+            const origin = { lat: startCoords[0], lng: startCoords[1] };
+            const destination = { lat: endCoords[0], lng: endCoords[1] };
+
+            const directionsService = new google.maps.DirectionsService();
+
+            // Fetch 3 different routes using Google Directions
+            const routeColors = [
+                { color: ROUTE_COLORS.fastest, type: 'fastest', label: 'Fastest' },
+                { color: ROUTE_COLORS.safest, type: 'safest', label: 'Safest' },
+                { color: ROUTE_COLORS.recommended, type: 'recommended', label: 'Recommended' },
+            ];
+
+            // Request alternatives to get multiple routes
+            directionsService.route({
+                origin: origin,
+                destination: destination,
+                travelMode: google.maps.TravelMode.WALKING,
+                provideRouteAlternatives: true,
+            }, (result, status) => {
+                if (status === 'OK') {
+                    const directions = result.routes;
+                    const bounds = new google.maps.LatLngBounds();
+
+                    // Match our backend routes with Google's routes
+                    directions.forEach((dirRoute, idx) => {
+                        if (idx >= 3) return; // Max 3 routes
+
+                        const routeInfo = routes[Math.min(idx, routes.length - 1)];
+                        const colorInfo = routeColors[idx] || routeColors[0];
+
+                        const renderer = new google.maps.DirectionsRenderer({
+                            map: map,
+                            directions: { routes: [dirRoute], request: result.request },
+                            routeIndex: 0,
+                            polylineOptions: {
+                                strokeColor: colorInfo.color,
+                                strokeOpacity: colorInfo.type === 'recommended' ? 0.9 : 0.6,
+                                strokeWeight: colorInfo.type === 'recommended' ? 6 : 4,
+                            },
+                            suppressMarkers: true,
+                        });
+
+                        if (colorInfo.type === 'fastest') {
+                            renderer.setOptions({
+                                polylineOptions: {
+                                    strokeColor: colorInfo.color,
+                                    strokeOpacity: 0.6,
+                                    strokeWeight: 4,
+                                    icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '20px' }],
+                                }
+                            });
+                        }
+
+                        directionsRenderers.push(renderer);
+
+                        // Extend bounds
+                        dirRoute.overview_path.forEach(p => bounds.extend(p));
+
+                        // Create route card
+                        const googleDist = dirRoute.legs[0].distance.value / 1000;
+                        const googleTime = dirRoute.legs[0].duration.value / 60;
+
+                        const card = document.createElement('div');
+                        card.className = `route-card ${idx === 0 ? 'active' : ''}`;
+                        card.dataset.type = colorInfo.type;
+                        card.onclick = () => selectRoute(idx);
+
+                        const safetyColor = routeInfo.safety_score >= 70 ? '#2ED573' :
+                                            routeInfo.safety_score >= 40 ? '#FFA502' : '#FF4757';
+
+                        card.innerHTML = `
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span class="route-dot" style="background:${colorInfo.color}"></span>
+                                    <span style="font-weight:700; font-size:14px; text-transform:capitalize;">${colorInfo.label}</span>
+                                </div>
+                                <span style="font-size:12px; color:#6b7280;">${googleTime.toFixed(1)} min • ${googleDist.toFixed(2)} km</span>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:12px; color:#6b7280;">Safety Score</span>
+                                    <span style="font-weight:700; color:${safetyColor};">${routeInfo.safety_score}/100</span>
+                                </div>
+                                <div class="safety-bar">
+                                    <div class="safety-fill" style="width:${routeInfo.safety_score}%; background:${safetyColor};"></div>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+
+                        // Add report button
+                        const reportBtn = document.createElement('button');
+                        reportBtn.innerHTML = '⚠️ Report Issue';
+                        reportBtn.style.cssText = 'width:100%; padding:6px; margin-top:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:11px; color:#FF4757; cursor:pointer;';
+                        reportBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            reportLat = origin.lat;
+                            reportLng = origin.lng;
+                            openReportModal();
+                        };
+                        card.appendChild(reportBtn);
+                    });
+
+                    // Add start/end markers
+                    const startMarker = new google.maps.Marker({
+                        position: origin, map: map,
+                        label: { text: 'A', color: 'white', fontWeight: 'bold' },
+                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#6C4CE0', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+                    });
+                    const endMarker = new google.maps.Marker({
+                        position: destination, map: map,
+                        label: { text: 'B', color: 'white', fontWeight: 'bold' },
+                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#FF4757', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+                    });
+                    markers.push(startMarker, endMarker);
+
+                    map.fitBounds(bounds, 50);
+                } else {
+                    // Fallback: draw straight lines if Directions API fails
+                    console.warn('Directions API failed:', status, '— falling back to straight lines');
+                    renderRoutesFallback(routes);
+                }
+            });
+        }
+
+        function renderRoutesFallback(routes) {
+            const bounds = new google.maps.LatLngBounds();
             routes.forEach((route, idx) => {
                 const path = route.coordinates.map(c => ({ lat: c[0], lng: c[1] }));
                 const color = ROUTE_COLORS[route.type] || '#666';
-
                 const polyline = new google.maps.Polyline({
-                    path: path,
-                    geodesic: true,
+                    path: path, geodesic: true,
                     strokeColor: color,
                     strokeOpacity: route.type === 'recommended' ? 0.9 : 0.6,
                     strokeWeight: route.type === 'recommended' ? 6 : 4,
                     map: map,
                 });
-
-                if (route.type === 'fastest') {
-                    polyline.setOptions({ icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '20px' }] });
-                }
-
                 routePolylines.push(polyline);
                 path.forEach(p => bounds.extend(p));
-
-                if (idx === 0) {
-                    const startMarker = new google.maps.Marker({
-                        position: path[0], map: map,
-                        label: { text: 'A', color: 'white', fontWeight: 'bold' },
-                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#6C4CE0', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-                    });
-                    const endMarker = new google.maps.Marker({
-                        position: path[path.length - 1], map: map,
-                        label: { text: 'B', color: 'white', fontWeight: 'bold' },
-                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#FF4757', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-                    });
-                    markers.push(startMarker, endMarker);
-                }
-
-                const card = document.createElement('div');
-                card.className = `route-card ${idx === 0 ? 'active' : ''}`;
-                card.dataset.type = route.type;
-                card.onclick = () => selectRoute(idx);
-
-                const safetyColor = route.safety_score >= 70 ? '#2ED573' :
-                                    route.safety_score >= 40 ? '#FFA502' : '#FF4757';
-
-                card.innerHTML = `
-                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="route-dot" style="background:${color}"></span>
-                            <span style="font-weight:700; font-size:14px; text-transform:capitalize;">${route.type}</span>
-                        </div>
-                        <span style="font-size:12px; color:#6b7280;">${route.time} min • ${route.distance} km</span>
-                    </div>
-                    <div style="margin-top:8px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:12px; color:#6b7280;">Safety Score</span>
-                            <span style="font-weight:700; color:${safetyColor};">${route.safety_score}/100</span>
-                        </div>
-                        <div class="safety-bar">
-                            <div class="safety-fill" style="width:${route.safety_score}%; background:${safetyColor};"></div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-
-                const reportBtn = document.createElement('button');
-                reportBtn.innerHTML = '⚠️ Report Issue';
-                reportBtn.style.cssText = 'width:100%; padding:6px; margin-top:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:11px; color:#FF4757; cursor:pointer;';
-                reportBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    reportLat = path[0].lat;
-                    reportLng = path[0].lng;
-                    openReportModal();
-                };
-                card.appendChild(reportBtn);
             });
-
             map.fitBounds(bounds, 50);
         }
 
         function selectRoute(idx) {
             document.querySelectorAll('.route-card').forEach((c, i) => c.classList.toggle('active', i === idx));
+            // Highlight selected route (DirectionsRenderers)
+            directionsRenderers.forEach((renderer, i) => {
+                const isSelected = i === idx;
+                renderer.setOptions({
+                    polylineOptions: {
+                        strokeColor: renderer.getDirections().routes[0]?.legs ? 
+                            (i === 0 ? ROUTE_COLORS.fastest : i === 1 ? ROUTE_COLORS.safest : ROUTE_COLORS.recommended) : '#666',
+                        strokeOpacity: isSelected ? 1 : 0.3,
+                        strokeWeight: isSelected ? 6 : 3,
+                    }
+                });
+                renderer.setMap(null);
+                renderer.setMap(map);
+            });
+            // Also handle fallback polylines
             routePolylines.forEach((line, i) => {
                 line.setOptions({
                     strokeWeight: i === idx ? 6 : 3,
                     strokeOpacity: i === idx ? 1 : 0.3,
                 });
             });
-            // Update current route coords for emergency
-            if (currentRoutes[idx] && currentRoutes[idx].coordinates) {
-                currentRouteCoords = JSON.stringify(currentRoutes[idx].coordinates);
-            }
         }
 
         // ─────────────────────────────────────────

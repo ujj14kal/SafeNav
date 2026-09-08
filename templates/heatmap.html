@@ -7,14 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
         #map { width: 100%; height: 100vh; }
         .sidebar {
             position: fixed; top: 0; left: 0; width: 380px; height: 100vh;
             background: #fff; z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.1);
-            overflow-y: auto; transition: transform 0.3s ease;
+            overflow-y: auto;
         }
-        .sidebar.collapsed { transform: translateX(-100%); }
         .header-bar { background: linear-gradient(135deg, #6C4CE0, #8B5CF6); color: white; padding: 16px 20px; }
         .nav-links { display: flex; gap: 8px; padding: 8px 16px; flex-wrap: wrap; }
         .nav-link {
@@ -36,56 +35,32 @@
             padding: 8px 16px; font-size: 12px; color: #6b7280;
             line-height: 1.5; border-bottom: 1px solid #f3f4f6;
         }
-        .bubble-legend {
-            display: flex; align-items: center; gap: 12px; padding: 8px 16px;
-            font-size: 11px; color: #6b7280;
+        .stat-card {
+            background: #f8f9fa; border-radius: 10px; padding: 12px; margin: 8px 16px;
         }
-        .bubble-legend .bubble { border-radius: 50%; display: inline-block; }
-        .sidebar-toggle {
-            position: fixed; top: 12px; left: 12px; z-index: 1001;
-            width: 40px; height: 40px; border-radius: 8px;
-            background: white; border: 2px solid #e5e7eb;
-            cursor: pointer; display: none; font-size: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%; height: auto; max-height: 55vh;
-                bottom: 0; top: auto; left: 0;
-                transform: translateY(0);
-                border-radius: 16px 16px 0 0;
-            }
-            .sidebar.collapsed { transform: translateY(calc(100% - 50px)); }
-            .sidebar-toggle { display: block; }
-            #map { height: 55vh; }
-            .danger-item { padding: 8px 12px; }
+        .stat-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 0; font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <button class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
-
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar">
         <div class="header-bar">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div>
-                    <h1 style="font-size:18px;">&#128737; SafeRoute</h1>
-                    <p style="font-size:11px; opacity:0.8;">Safety Heatmap</p>
-                </div>
-                <span style="font-size:11px; opacity:0.7; cursor:pointer;" onclick="toggleSidebar()">&#10005;</span>
-            </div>
+            <h1 style="font-size:18px;">🛡️ SafeRoute</h1>
+            <p style="font-size:11px; opacity:0.8;">Safety Heatmap</p>
         </div>
         <div class="nav-links">
-            <a href="/" class="nav-link">&#128506; Route</a>
-            <a href="/heatmap" class="nav-link" style="background:#6C4CE0;color:white;">&#128293; Heatmap</a>
-            <a href="/school" class="nav-link">&#127979; School</a>
-            <a href="/admin" class="nav-link">&#128202; Admin</a>
+            <a href="/" class="nav-link">🗺️ Route</a>
+            <a href="/heatmap" class="nav-link" style="background:#6C4CE0;color:white;">🔥 Heatmap</a>
+            <a href="/school" class="nav-link">🏫 School</a>
+            <a href="/admin" class="nav-link">📊 Admin</a>
         </div>
         <div class="section-desc">
-            &#128293; <strong>Heatmap</strong> — View real-time safety conditions across the city as bubbles. Larger, redder bubbles = more dangerous areas. Green bubbles = safe zones. Adjust the time slider to see how safety changes throughout the day.
+            🔥 <strong>Heatmap</strong> — Real-time safety conditions across the city. Red areas = dangerous, green = safe. Uses actual road data and community feedback. Adjust the time slider to see how safety changes throughout the day.
         </div>
         <div style="padding: 16px;">
-            <label style="font-size:13px; font-weight:700;">&#9200; Time of Day</label>
+            <label style="font-size:13px; font-weight:700;">⏰ Time of Day</label>
             <input type="range" class="time-slider" id="timeSlider" min="0" max="23" value="12" />
             <div style="display:flex; justify-content:space-between; font-size:11px; color:#6b7280;">
                 <span>12 AM</span>
@@ -97,34 +72,44 @@
             <h3 style="font-size:13px; font-weight:700; margin-bottom:4px;">Safety Legend</h3>
             <div class="legend-bar"></div>
             <div style="display:flex; justify-content:space-between; font-size:11px;">
-                <span style="color:#FF4757;">&#9679; 0-30 Dangerous</span>
-                <span style="color:#FFA502;">&#9679; 31-60 Moderate</span>
-                <span style="color:#2ED573;">&#9679; 61-100 Safe</span>
+                <span style="color:#FF4757;">● 0-30 Dangerous</span>
+                <span style="color:#FFA502;">● 31-60 Moderate</span>
+                <span style="color:#2ED573;">● 61-100 Safe</span>
             </div>
         </div>
-        <div class="bubble-legend">
-            <span>Bubble size = area covered</span>
-            <span class="bubble" style="width:12px; height:12px; background:rgba(255,71,87,0.3);"></span>
-            <span class="bubble" style="width:18px; height:18px; background:rgba(255,165,2,0.3);"></span>
-            <span class="bubble" style="width:24px; height:24px; background:rgba(46,213,115,0.3);"></span>
+
+        <div class="stat-card">
+            <h3 style="font-size:13px; font-weight:700; margin-bottom:8px;">📊 Area Statistics</h3>
+            <div class="stat-row">
+                <span style="color:#6b7280;">Avg Safety Score</span>
+                <span id="avgScore" style="font-weight:700; color:#6C4CE0;">—</span>
+            </div>
+            <div class="stat-row">
+                <span style="color:#6b7280;">Safe Segments</span>
+                <span id="safeCount" style="font-weight:700; color:#2ED573;">—</span>
+            </div>
+            <div class="stat-row">
+                <span style="color:#6b7280;">Moderate Segments</span>
+                <span id="moderateCount" style="font-weight:700; color:#FFA502;">—</span>
+            </div>
+            <div class="stat-row">
+                <span style="color:#6b7280;">Dangerous Segments</span>
+                <span id="dangerCount" style="font-weight:700; color:#FF4757;">—</span>
+            </div>
         </div>
 
         <div style="padding: 12px 16px; border-top: 1px solid #e5e7eb;">
-            <h3 style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128205; Click a bubble to check details</h3>
-            <div id="locationInfo" style="font-size:12px; color:#6b7280;">Click any bubble on the map to see detailed safety info for that area</div>
+            <h3 style="font-size:13px; font-weight:700; margin-bottom:8px;">📍 Click map for details</h3>
+            <div id="locationInfo" style="font-size:12px; color:#6b7280;">Click any colored road segment on the map to see safety details for that area</div>
         </div>
 
-        <h3 style="padding: 8px 16px 4px; font-size:13px; font-weight:700;">&#128308; Most Dangerous Zones</h3>
+        <h3 style="padding: 8px 16px 4px; font-size:13px; font-weight:700;">🔴 Most Dangerous Zones</h3>
         <div id="dangerZones"></div>
     </div>
     <div id="map"></div>
 
     <script>
-        let map, bubbles = [];
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        }
+        let map, heatmapLayer, roadLines = [], infoWindow;
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
@@ -133,6 +118,10 @@
                 mapTypeControl: false,
                 streetViewControl: false,
             });
+
+            infoWindow = new google.maps.InfoWindow();
+            map.addListener('click', () => infoWindow.close());
+
             loadHeatmap(12);
         }
 
@@ -148,152 +137,136 @@
             return '#26de81';
         }
 
-        function getBubbleRadius(score) {
-            if (score < 20) return 300;
-            if (score < 30) return 250;
-            if (score < 40) return 200;
-            if (score < 50) return 180;
-            if (score < 60) return 150;
-            if (score < 70) return 130;
-            return 100;
-        }
-
         function getSafetyDescription(score) {
             if (score === null) return 'No data available';
-            if (score < 15) return '\u26a0\ufe0f Extremely dangerous \u2014 avoid completely, especially at night';
-            if (score < 25) return '\ud83d\udd34 High risk \u2014 poorly lit, isolated area with no police nearby';
-            if (score < 35) return '\ud83d\udfe0 Unsafe \u2014 exercise caution, avoid walking alone';
-            if (score < 45) return '\ud83d\udfe1 Moderate risk \u2014 stay alert, stick to main roads';
-            if (score < 55) return '\ud83d\udfe1 Generally safe \u2014 normal precautions advised';
-            if (score < 65) return '\ud83d\udfe2 Safe area \u2014 well-traveled with decent lighting';
-            if (score < 75) return '\ud83d\udfe2 Very safe \u2014 well-lit commercial area with good foot traffic';
-            return '\ud83d\udfe2 Excellent \u2014 well-lit, populated, with police presence nearby';
+            if (score < 15) return '⚠️ Extremely dangerous — avoid completely';
+            if (score < 25) return '🔴 High risk — poorly lit, isolated';
+            if (score < 35) return '🟠 Unsafe — exercise caution';
+            if (score < 45) return '🟡 Moderate risk — stay alert';
+            if (score < 55) return '🟡 Generally safe — normal precautions';
+            if (score < 65) return '🟢 Safe — well-traveled route';
+            if (score < 75) return '🟢 Very safe — well-lit commercial area';
+            return '🟢 Excellent — well-lit, populated, police nearby';
         }
 
         function loadHeatmap(hour) {
-            bubbles.forEach(b => b.setMap(null));
-            bubbles = [];
+            // Clear existing
+            if (heatmapLayer) heatmapLayer.setMap(null);
+            roadLines.forEach(l => l.setMap(null));
+            roadLines = [];
 
             fetch('/api/heatmap?hour=' + hour)
-                .then(r => r.json())
-                .then(data => {
-                    const features = data.features || [];
-                    const processed = new Set();
-                    const clusters = [];
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var features = data.features || [];
+                    var heatData = [];
+                    var totalScore = 0, safeCount = 0, moderateCount = 0, dangerCount = 0;
 
-                    features.forEach((f, i) => {
-                        if (processed.has(i)) return;
-                        const coords = f.geometry.coordinates;
-                        const score = f.properties.safety_score;
-                        const midLat = (coords[0][1] + coords[1][1]) / 2;
-                        const midLng = (coords[0][0] + coords[1][0]) / 2;
+                    features.forEach(function(f) {
+                        var coords = f.geometry.coordinates;
+                        var score = f.properties.safety_score;
+                        if (score === null || score === undefined) return;
 
-                        const cluster = {
-                            lat: midLat, lng: midLng,
-                            scores: [score],
-                            roadTypes: [f.properties.road_type],
-                            names: [f.properties.name || ''],
-                            lit: f.properties.lit,
-                        };
-                        processed.add(i);
+                        totalScore += score;
+                        if (score >= 61) safeCount++;
+                        else if (score >= 31) moderateCount++;
+                        else dangerCount++;
 
-                        features.forEach((other, j) => {
-                            if (processed.has(j) || j === i) return;
-                            const oCoords = other.geometry.coordinates;
-                            const oLat = (oCoords[0][1] + oCoords[1][1]) / 2;
-                            const oLng = (oCoords[0][0] + oCoords[1][0]) / 2;
-                            const dist = Math.sqrt(Math.pow(midLat - oLat, 2) + Math.pow(midLng - oLng, 2));
-                            if (dist < 0.002) {
-                                cluster.scores.push(other.properties.safety_score);
-                                cluster.roadTypes.push(other.properties.road_type);
-                                if (other.properties.name) cluster.names.push(other.properties.name);
-                                processed.add(j);
-                            }
-                        });
+                        var lat1 = coords[0][1], lng1 = coords[0][0];
+                        var lat2 = coords[1][1], lng2 = coords[1][0];
+                        var color = getHeatmapColor(score);
 
-                        cluster.avgScore = Math.round(cluster.scores.reduce((a, b) => a + b, 0) / cluster.scores.length);
-                        cluster.primaryRoadType = cluster.roadTypes.sort((a, b) =>
-                            cluster.roadTypes.filter(v => v === b).length - cluster.roadTypes.filter(v => v === a).length
-                        )[0];
-                        cluster.name = cluster.names.filter(n => n)[0] || (cluster.primaryRoadType + ' area');
-                        clusters.push(cluster);
-                    });
+                        // Add heat points along segment (dangerous areas get more points = hotter)
+                        var weight = Math.max(1, Math.round((100 - score) / 10));
+                        var steps = Math.max(2, Math.round(weight / 2));
+                        for (var i = 0; i <= steps; i++) {
+                            var t = i / steps;
+                            heatData.push({
+                                location: new google.maps.LatLng(
+                                    lat1 + t * (lat2 - lat1),
+                                    lng1 + t * (lng2 - lng1)
+                                ),
+                                weight: weight,
+                            });
+                        }
 
-                    clusters.forEach(cluster => {
-                        const color = getHeatmapColor(cluster.avgScore);
-                        const radius = getBubbleRadius(cluster.avgScore);
-
-                        const circle = new google.maps.Circle({
-                            strokeColor: color, strokeOpacity: 0.6, strokeWeight: 2,
-                            fillColor: color, fillOpacity: 0.35,
+                        // Draw colored road line
+                        var line = new google.maps.Polyline({
+                            path: [{lat: lat1, lng: lng1}, {lat: lat2, lng: lng2}],
+                            geodesic: true,
+                            strokeColor: color,
+                            strokeOpacity: 0.7,
+                            strokeWeight: 4,
                             map: map,
-                            center: { lat: cluster.lat, lng: cluster.lng },
-                            radius: radius,
                         });
 
-                        circle.addListener('click', () => {
-                            const content = '<div style="min-width:200px; padding:4px;">' +
-                                '<b style="font-size:14px; color:' + color + ';">' + cluster.name + '</b><br>' +
-                                '<b style="font-size:16px;">Safety: ' + cluster.avgScore + '/100</b><br>' +
-                                '<span style="font-size:12px;">' + getSafetyDescription(cluster.avgScore) + '</span><br>' +
-                                '<span style="color:#6b7280; font-size:11px;">' +
-                                    'Road: ' + cluster.primaryRoadType + ' \u2022 ' +
-                                    'Lit: ' + (cluster.lit ? 'Yes \u2705' : 'No \u274c') + ' \u2022 ' +
-                                    'Segments: ' + cluster.scores.length +
+                        line.addListener('click', function(e) {
+                            var content = '<div style="min-width:220px;padding:4px;">' +
+                                '<b style="font-size:15px;color:' + color + ';">Safety: ' + score + '/100</b><br>' +
+                                '<span style="font-size:12px;">' + getSafetyDescription(score) + '</span><br>' +
+                                '<span style="color:#6b7280;font-size:11px;">Road: ' + f.properties.road_type +
+                                ' &bull; Lit: ' + (f.properties.lit ? 'Yes ✅' : 'No ❌') +
+                                (f.properties.name ? '<br>Street: ' + f.properties.name : '') +
                                 '</span></div>';
-                            new google.maps.InfoWindow({
-                                content: content,
-                                position: { lat: cluster.lat, lng: cluster.lng },
-                            }).open(map);
-
-                            document.getElementById('locationInfo').innerHTML =
-                                '<strong>' + cluster.name + '</strong><br>' +
-                                'Safety Score: <b style="color:' + color + ';">' + cluster.avgScore + '/100</b><br>' +
-                                getSafetyDescription(cluster.avgScore) + '<br>' +
-                                '<small>Road type: ' + cluster.primaryRoadType + ' \u2022 ' + cluster.scores.length + ' segments analyzed</small>';
+                            infoWindow.setContent(content);
+                            infoWindow.setPosition(e.latLng);
+                            infoWindow.open(map);
                         });
 
-                        circle.addListener('mouseover', () => {
-                            circle.setOptions({ fillOpacity: 0.55, strokeWeight: 3 });
-                        });
-                        circle.addListener('mouseout', () => {
-                            circle.setOptions({ fillOpacity: 0.35, strokeWeight: 2 });
-                        });
-
-                        bubbles.push(circle);
+                        roadLines.push(line);
                     });
+
+                    // Update stats FIRST (before heatmap layer)
+                    var avg = features.length > 0 ? Math.round(totalScore / features.length) : 0;
+                    document.getElementById('avgScore').textContent = avg + '/100';
+                    document.getElementById('safeCount').textContent = safeCount;
+                    document.getElementById('moderateCount').textContent = moderateCount;
+                    document.getElementById('dangerCount').textContent = dangerCount;
+
+                    // Google Maps native heatmap layer (wrapped in try-catch)
+                    try {
+                        if (heatData.length > 0) {
+                            heatmapLayer = new google.maps.visualization.HeatmapLayer({
+                                data: heatData,
+                                map: map,
+                                radius: 50,
+                                opacity: 0.5,
+                                dissipating: true,
+                            });
+                        }
+                    } catch(e) {
+                        console.warn('HeatmapLayer error:', e.message);
+                    }
                 });
 
+            // Load danger zones
             fetch('/api/admin/stats?hour=' + hour)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('dangerZones').innerHTML = (data.danger_zones || []).slice(0, 10).map(z => {
-                        const color = z.score < 20 ? '#FF4757' : z.score < 30 ? '#FFA502' : '#E8D44D';
-                        const zoneLabel = z.zone_name ? ' \u2014 ' + z.zone_name : '';
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var zones = (data.danger_zones || []).slice(0, 10);
+                    document.getElementById('dangerZones').innerHTML = zones.map(function(z) {
+                        var color = z.score < 20 ? '#FF4757' : z.score < 30 ? '#FFA502' : '#E8D44D';
                         return '<div class="danger-item">' +
-                            '<div style="flex:1; min-width:0;">' +
-                                '<div style="font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + z.name + zoneLabel + '</div>' +
-                                '<div style="font-size:11px; color:#6b7280;">' + z.road_type + ' road</div>' +
-                                (z.description ? '<div style="font-size:10px; color:#9ca3af; margin-top:2px; line-height:1.3;">' + z.description + '</div>' : '') +
+                            '<div style="flex:1;min-width:0;">' +
+                            '<div style="font-size:13px;font-weight:600;">' + z.name + '</div>' +
+                            '<div style="font-size:11px;color:#6b7280;">' + z.road_type + ' road</div>' +
                             '</div>' +
-                            '<div style="text-align:right; flex-shrink:0; margin-left:8px;">' +
-                                '<span style="font-weight:700; background:' + color + '20; color:' + color + '; padding:4px 10px; border-radius:6px;">' + z.score + '</span>' +
-                                '<div style="font-size:9px; color:#9ca3af; margin-top:2px;">/100</div>' +
-                            '</div></div>';
-                    }).join('') || '<div style="padding:16px; color:#6b7280;">No danger zones detected at this hour</div>';
+                            '<span style="font-weight:700;background:' + color + '20;color:' + color + ';padding:4px 10px;border-radius:6px;">' + z.score + '</span>' +
+                            '</div>';
+                    }).join('') || '<div style="padding:16px;color:#6b7280;">No danger zones detected</div>';
                 });
         }
 
-        document.getElementById('timeSlider').addEventListener('input', (e) => {
-            const hour = parseInt(e.target.value);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        document.getElementById('timeSlider').addEventListener('input', function(e) {
+            var hour = parseInt(e.target.value);
+            var ampm = hour >= 12 ? 'PM' : 'AM';
+            var h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
             document.getElementById('timeDisplay').textContent = h12 + ':00 ' + ampm;
             loadHeatmap(hour);
         });
     </script>
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBbcgeM4hlHf7pOrKzYHGF6HjvVKr3g9dI&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7GKGMDe72vWEitMpeq02ePFs3XvSHI8U&callback=initMap&libraries=visualization">
     </script>
 </body>
 </html>
