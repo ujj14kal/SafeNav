@@ -21,7 +21,7 @@ http://10.58.193.231:5000
 
 **GitHub Repository:**
 ```
-https://github.com/ujj14kal/safestroute
+https://github.com/ujj14kal/SafeNav
 ```
 
 ---
@@ -96,7 +96,7 @@ https://github.com/ujj14kal/safestroute
 
 ```bash
 # Clone
-git clone https://github.com/ujj14kal/safestroute.git
+git clone https://github.com/ujj14kal/SafeNav.git
 cd safestroute
 
 # Install dependencies
