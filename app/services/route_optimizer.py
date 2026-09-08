@@ -1,8 +1,9 @@
 """
-SafeRoute — Route Optimizer
+SafeRoute — Route Optimizer (v2 — Real Data)
 Finds 3 routes (fastest, safest, balanced) using NetworkX.
-Algorithm inspired by NVIDIA cuOpt: safety-weighted cost matrix.
+Now uses real OSM road data and Google Places POIs.
 """
+import math
 import networkx as nx
 import numpy as np
 from app.services.safety_engine import SafetyEngine
@@ -36,7 +37,7 @@ class RouteOptimizer:
             self._build_graph(data)
 
     def _build_graph(self, data):
-        """Build NetworkX graph from data."""
+        """Build NetworkX graph from data (now with real OSM attributes)."""
         for node_id, attrs in data.get('nodes', {}).items():
             self.graph.add_node(node_id, **attrs)
             self.node_positions[node_id] = (attrs.get('lat', 0), attrs.get('lng', 0))
@@ -48,17 +49,32 @@ class RouteOptimizer:
             speed = self.SPEED_LIMITS.get(road_type, 30)
             travel_time = (distance / 1000) / (speed / 3600)  # seconds
 
-            mid_lat = (self.graph.nodes[u].get('lat', 0) + self.graph.nodes[v].get('lat', 0)) / 2
-            mid_lng = (self.graph.nodes[u].get('lng', 0) + self.graph.nodes[v].get('lng', 0)) / 2
+            # Compute midpoint for spatial lookups
+            u_lat = self.graph.nodes[u].get('lat', 0)
+            u_lng = self.graph.nodes[u].get('lng', 0)
+            v_lat = self.graph.nodes[v].get('lat', 0)
+            v_lng = self.graph.nodes[v].get('lng', 0)
+            mid_lat = (u_lat + v_lat) / 2
+            mid_lng = (u_lng + v_lng) / 2
+
+            # Count nearby shops from POIs (real Google Places data)
+            shops = self._count_nearby_shops(mid_lat, mid_lng, radius=300)
+
+            # Compute crime rate from environmental factors
+            crime_rate = self._compute_crime_rate(mid_lat, mid_lng, road_type, edge.get('lit', False))
 
             edge_data = {
                 'distance': distance,
                 'road_type': road_type,
                 'lit': edge.get('lit', False),
-                'shops': edge.get('shops', 0),
+                'shops': shops,
+                'crime_rate': crime_rate,
                 'lat': mid_lat,
                 'lng': mid_lng,
-                'travel_time': travel_time,
+                'lanes': edge.get('lanes', None),
+                'name': edge.get('name', ''),
+                'footpath': edge.get('footpath', road_type in ('primary', 'secondary')),
+                'sidewalk': edge.get('sidewalk', False),
             }
 
             safety_score = self.safety_engine.calculate_edge_score(edge_data, hour=12)
@@ -69,12 +85,72 @@ class RouteOptimizer:
                 travel_time=travel_time,
                 road_type=road_type,
                 lit=edge.get('lit', False),
-                shops=edge.get('shops', 0),
+                shops=shops,
+                crime_rate=crime_rate,
                 safety_score=safety_score,
                 safety_cost=safety_cost,
                 lat=mid_lat,
                 lng=mid_lng,
+                lanes=edge.get('lanes', None),
+                name=edge.get('name', ''),
             )
+
+    def _count_nearby_shops(self, lat, lng, radius=300):
+        """Count Google Places shops/commercial places near a point."""
+        count = 0
+        # Check multiple POI categories that indicate commercial activity
+        for category in ['liquor_shops', 'atms', 'gas_stations', 'schools']:
+            for poi in self.pois.get(category, []):
+                d = SafetyEngine.haversine(lat, lng, poi['lat'], poi['lng'])
+                if d < radius:
+                    count += 1
+        # Also count hospitals (they indicate developed/commercial areas)
+        for poi in self.pois.get('hospitals', []):
+            d = SafetyEngine.haversine(lat, lng, poi['lat'], poi['lng'])
+            if d < radius:
+                count += 2  # hospitals are strong indicators of activity
+        return count
+
+    def _compute_crime_rate(self, lat, lng, road_type, lit):
+        """
+        Derive crime risk from environmental factors.
+        0.0 = safe, 1.0 = dangerous.
+        """
+        risk = 0.0
+
+        # Liquor shops nearby increase risk
+        for shop in self.pois.get('liquor_shops', []):
+            d = SafetyEngine.haversine(lat, lng, shop['lat'], shop['lng'])
+            if d < 200:
+                risk += 0.25
+            elif d < 500:
+                risk += 0.15
+            elif d < 1000:
+                risk += 0.05
+
+        # Road type isolation
+        if road_type == 'service':
+            risk += 0.20
+        elif road_type == 'unclassified':
+            risk += 0.10
+        elif road_type == 'residential':
+            risk += 0.05
+
+        # Lighting
+        if not lit:
+            risk += 0.20
+
+        # Police proximity reduces risk
+        for p in self.pois.get('police_stations', []):
+            d = SafetyEngine.haversine(lat, lng, p['lat'], p['lng'])
+            if d < 500:
+                risk -= 0.15
+            elif d < 1000:
+                risk -= 0.08
+            elif d < 2000:
+                risk -= 0.03
+
+        return max(0.0, min(1.0, risk))
 
     def _update_costs_for_hour(self, hour, reports=None):
         """Recalculate safety costs for all edges given time of day."""
@@ -84,8 +160,11 @@ class RouteOptimizer:
                 'road_type': data.get('road_type', 'residential'),
                 'lit': data.get('lit', False),
                 'shops': data.get('shops', 0),
+                'crime_rate': data.get('crime_rate', 0.3),
                 'lat': data.get('lat', 0),
                 'lng': data.get('lng', 0),
+                'lanes': data.get('lanes', None),
+                'name': data.get('name', ''),
             }
             safety_score = self.safety_engine.calculate_edge_score(edge_info, hour=hour, reports=reports)
             travel_time = data.get('travel_time', 60)
@@ -142,9 +221,6 @@ class RouteOptimizer:
     def find_routes(self, start, end, hour=12, mode='normal', reports=None):
         """
         Find 3 routes: fastest, safest, and recommended (balanced).
-
-        Returns list of route dicts with path, coordinates, time,
-        distance, and safety score.
         """
         if start not in self.graph or end not in self.graph:
             return []
@@ -189,7 +265,6 @@ class RouteOptimizer:
 
         # If fastest == safest, try harder to find alternatives
         if len(routes) >= 2 and routes[0]['path'] == routes[1]['path']:
-            # Try a different blend ratio for recommended
             try:
                 for u, v, data in self.graph.edges(data=True):
                     data['alt_cost'] = (
@@ -202,7 +277,6 @@ class RouteOptimizer:
             except nx.NetworkXNoPath:
                 pass
 
-        # Ensure we always return at least what we have
         return routes[:3]
 
     def get_heatmap_data(self, hour=12, reports=None):
@@ -226,6 +300,7 @@ class RouteOptimizer:
                     'safety_score': data.get('safety_score', 50),
                     'road_type': data.get('road_type', 'unknown'),
                     'lit': data.get('lit', False),
+                    'name': data.get('name', ''),
                     'from': u,
                     'to': v,
                 }
@@ -242,7 +317,7 @@ class RouteOptimizer:
             score = data.get('safety_score', 50)
             if score < 40:
                 zones.append({
-                    'name': f"{u} → {v} ({data.get('road_type', 'road')})",
+                    'name': data.get('name', '') or f"{u} → {v} ({data.get('road_type', 'road')})",
                     'score': score,
                     'road_type': data.get('road_type', 'unknown'),
                     'lat': data.get('lat', 0),
