@@ -10,7 +10,7 @@
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         #map { width: 100%; height: 100vh; z-index: 1; }
         .sidebar {
-            position: fixed; top: 0; left: 0; width: 380px; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 400px; height: 100vh;
             background: #fff; z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.1);
             overflow-y: auto; transition: transform 0.3s ease;
         }
@@ -40,20 +40,23 @@
         .route-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
         .safety-bar { height: 8px; border-radius: 4px; background: #e5e7eb; margin-top: 6px; }
         .safety-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-        .breakdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 16px; }
-        .breakdown-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
-        .breakdown-score { font-weight: 700; min-width: 20px; }
+        .breakdown-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 8px 16px; }
+        .breakdown-item {
+            display: flex; flex-direction: column; gap: 4px; font-size: 13px;
+            padding: 8px 10px; background: #f8f9fa; border-radius: 8px;
+        }
+        .breakdown-bar { height: 6px; border-radius: 3px; background: #e5e7eb; overflow: hidden; }
+        .breakdown-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
         .explanation-box {
             margin: 12px 16px; padding: 14px; background: #f0edff;
             border-radius: 10px; border-left: 4px solid #6C4CE0;
             font-size: 13px; line-height: 1.6; color: #374151;
         }
-        /* SOS Button - Pulsing red */
         .sos-btn {
             position: fixed; bottom: 24px; right: 24px; z-index: 1001;
             width: 70px; height: 70px; border-radius: 50%;
             background: #FF4757; color: white; border: none;
-            font-size: 28px; cursor: pointer; 
+            font-size: 28px; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255,71,87,0.4);
             transition: transform 0.2s;
             animation: pulse-sos 2s infinite;
@@ -64,7 +67,6 @@
             70% { box-shadow: 0 0 0 20px rgba(255, 71, 87, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
         }
-        /* Emergency Overlay */
         .emergency-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 2000; display: none;
@@ -73,7 +75,7 @@
         .emergency-overlay.show { display: flex; }
         .emergency-card {
             background: white; border-radius: 16px; padding: 28px;
-            max-width: 480px; width: 90%; max-height: 85vh; overflow-y: auto;
+            max-width: 520px; width: 90%; max-height: 85vh; overflow-y: auto;
         }
         .night-toggle {
             display: flex; align-items: center; gap: 10px;
@@ -109,7 +111,6 @@
             color: #6C4CE0; font-size: 14px;
         }
         .loading-spinner.show { display: block; }
-        /* Safety Briefing */
         .briefing-box {
             margin: 12px 16px; padding: 16px; border-radius: 12px;
             font-size: 13px; line-height: 1.6;
@@ -118,7 +119,6 @@
         .briefing-MODERATE { background: #fffbeb; border-left: 4px solid #f59e0b; }
         .briefing-CAUTION { background: #fef2f2; border-left: 4px solid #f97316; }
         .briefing-HIGH-ALERT { background: #fef2f2; border-left: 4px solid #ef4444; }
-        /* Report Category Tags */
         .report-tag {
             display: inline-block; padding: 4px 10px; border-radius: 12px;
             font-size: 11px; font-weight: 600; margin: 2px;
@@ -126,18 +126,15 @@
         }
         .report-tag:hover { transform: scale(1.05); }
         .report-tag.active { box-shadow: 0 0 0 2px #6C4CE0; }
-        /* Guardian Card */
         .guardian-card {
             padding: 12px; margin: 8px 0; border-radius: 10px;
             background: #f8f9fa; border: 1px solid #e5e7eb;
         }
-        /* Location Share */
         .share-link {
             display: flex; align-items: center; gap: 8px;
             padding: 10px; background: #f0edff; border-radius: 8px;
             font-size: 12px; word-break: break-all;
         }
-        /* Audio Recording */
         .recording-dot {
             width: 12px; height: 12px; border-radius: 50%;
             background: #FF4757; animation: blink 1s infinite;
@@ -146,12 +143,30 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
-        /* Safety Zone Toggle */
         .zone-toggle {
             display: flex; align-items: center; gap: 8px;
             padding: 8px 16px; font-size: 13px;
         }
         .zone-color { width: 16px; height: 16px; border-radius: 4px; }
+        .section-desc {
+            padding: 8px 16px; font-size: 12px; color: #6b7280;
+            line-height: 1.5; border-bottom: 1px solid #f3f4f6;
+        }
+        .help-section {
+            padding: 12px 16px; border-bottom: 1px solid #f3f4f6;
+        }
+        .feedback-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 6px 12px; border-radius: 6px; font-size: 12px;
+            font-weight: 600; border: 2px solid #e5e7eb; cursor: pointer;
+            transition: all 0.2s; background: white;
+        }
+        .feedback-btn.safe:hover, .feedback-btn.safe.active {
+            border-color: #2ED573; background: #f0fdf4; color: #2ED573;
+        }
+        .feedback-btn.unsafe:hover, .feedback-btn.unsafe.active {
+            border-color: #FF4757; background: #fef2f2; color: #FF4757;
+        }
         @media (max-width: 768px) {
             .sidebar { width: 100%; height: auto; max-height: 60vh; bottom: 0; top: auto;
                        transform: translateY(0); border-radius: 16px 16px 0 0; }
@@ -182,6 +197,11 @@
             <a href="/admin" class="nav-link">📊 Admin</a>
         </div>
 
+        <!-- Tab description -->
+        <div class="section-desc">
+            🗺️ <strong>Route Planner</strong> — Find the safest route between two locations. Our AI analyzes lighting, police proximity, road type, and community reports to recommend the best path.
+        </div>
+
         <!-- Night Mode Toggle -->
         <div class="night-toggle" onclick="toggleNight()">
             <span>🌙</span>
@@ -189,7 +209,7 @@
             <div class="toggle-switch" id="nightToggle"></div>
         </div>
 
-        <!-- Safety Zone Toggle (SafeRoute Pune-inspired) -->
+        <!-- Safety Zone Toggle -->
         <div style="padding: 8px 16px;">
             <div style="font-size:12px; font-weight:600; color:#374151; margin-bottom:6px;">Safety Zones</div>
             <div class="zone-toggle">
@@ -227,7 +247,7 @@
 
         <div id="routesContainer"></div>
 
-        <!-- Safety Briefing (SafeWalk-inspired) -->
+        <!-- Safety Briefing -->
         <div id="briefingContainer" style="display:none;">
             <h3 style="padding:8px 16px 4px; font-size:13px; font-weight:700; color:#374151;">
                 📋 Safety Briefing
@@ -235,13 +255,28 @@
             <div class="briefing-box" id="briefingBox"></div>
         </div>
 
+        <!-- Enhanced Safety Breakdown -->
         <div id="breakdownContainer" style="display:none;">
             <h3 style="padding:8px 16px 4px; font-size:13px; font-weight:700; color:#374151;">
                 📊 Safety Breakdown
             </h3>
             <div class="breakdown-grid" id="breakdownGrid"></div>
+            <div id="breakdownMeta" style="padding:4px 16px; font-size:11px; color:#9ca3af;"></div>
         </div>
 
+        <!-- Feedback Section -->
+        <div id="feedbackSection" style="display:none; padding: 12px 16px; border-top: 1px solid #e5e7eb;">
+            <h3 style="font-size:13px; font-weight:700; color:#374151; margin-bottom:8px;">
+                👍 Was this route safe?
+            </h3>
+            <div style="display:flex; gap:8px;">
+                <button class="feedback-btn safe" onclick="submitFeedback('safe')" id="fbSafeBtn">👍 Safe</button>
+                <button class="feedback-btn unsafe" onclick="submitFeedback('unsafe')" id="fbUnsafeBtn">👎 Unsafe</button>
+            </div>
+            <div id="feedbackStats" style="margin-top:8px; font-size:12px; color:#6b7280;"></div>
+        </div>
+
+        <!-- AI Analysis -->
         <div id="explanationContainer" style="display:none;">
             <h3 style="padding:8px 16px 4px; font-size:13px; font-weight:700; color:#374151;">
                 🤖 AI Analysis
@@ -249,8 +284,8 @@
             <div class="explanation-box" id="explanationText"></div>
         </div>
 
-        <!-- Guardian Network (Safree-inspired) -->
-        <div id="guardianSection" style="padding: 12px 16px;">
+        <!-- Guardian Network -->
+        <div id="guardianSection" style="padding: 12px 16px; border-top: 1px solid #e5e7eb;">
             <h3 style="font-size:13px; font-weight:700; color:#374151; margin-bottom:8px;">
                 👥 Guardian Network
             </h3>
@@ -260,7 +295,7 @@
             </button>
         </div>
 
-        <!-- Live Location Sharing (Safree-inspired) -->
+        <!-- Live Location Sharing -->
         <div id="locationShareSection" style="padding: 12px 16px; border-top: 1px solid #e5e7eb;">
             <h3 style="font-size:13px; font-weight:700; color:#374151; margin-bottom:8px;">
                 📍 Live Location Sharing
@@ -278,11 +313,76 @@
                 </button>
             </div>
         </div>
+
+        <!-- Help Center -->
+        <div style="border-top: 2px solid #e5e7eb; margin-top: 4px;">
+            <div class="section-desc" style="cursor:pointer; font-weight:700; color:#6C4CE0;" onclick="toggleHelp()">
+                ❓ Help Center <span id="helpArrow" style="float:right;">▼</span>
+            </div>
+            <div id="helpContent" style="display:none;">
+                <div class="help-section">
+                    <h4 style="font-size:13px; font-weight:700; margin-bottom:6px;">📞 Emergency Numbers</h4>
+                    <div style="font-size:12px; line-height:2;">
+                        🚔 Police: <a href="tel:100" style="color:#FF4757; font-weight:700;">100</a><br>
+                        🚑 Ambulance: <a href="tel:108" style="color:#FF4757; font-weight:700;">108</a><br>
+                        🆘 Emergency: <a href="tel:112" style="color:#FF4757; font-weight:700;">112</a><br>
+                        👩 Women Helpline: <a href="tel:1091" style="color:#FF4757; font-weight:700;">1091</a>
+                    </div>
+                </div>
+                <div class="help-section">
+                    <h4 style="font-size:13px; font-weight:700; margin-bottom:6px;">📖 How to Use</h4>
+                    <div style="font-size:12px; line-height:1.8; color:#374151;">
+                        1. Enter <strong>From</strong> and <strong>To</strong> locations<br>
+                        2. Click <strong>Find Safe Routes</strong><br>
+                        3. Choose from Fastest / Safest / Recommended<br>
+                        4. View safety breakdown for each route<br>
+                        5. Right-click map to report safety issues<br>
+                        6. Add Guardians for emergency alerts<br>
+                        7. Press 🚨 SOS in emergencies
+                    </div>
+                </div>
+                <div class="help-section">
+                    <h4 style="font-size:13px; font-weight:700; margin-bottom:6px;">🔐 Account</h4>
+                    <div id="authSection">
+                        <div id="loginForm">
+                            <input type="text" id="loginUsername" placeholder="Username" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:6px;">
+                            <input type="password" id="loginPassword" placeholder="Password" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:8px;">
+                            <div style="display:flex; gap:6px;">
+                                <button onclick="loginUser()" style="flex:1; padding:8px; background:#6C4CE0; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">Login</button>
+                                <button onclick="showRegister()" style="flex:1; padding:8px; background:#f0edff; color:#6C4CE0; border:2px solid #6C4CE0; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">Register</button>
+                            </div>
+                        </div>
+                        <div id="registerForm" style="display:none;">
+                            <input type="text" id="regName" placeholder="Full Name" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:6px;">
+                            <input type="text" id="regUsername" placeholder="Username" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:6px;">
+                            <input type="email" id="regEmail" placeholder="Email (optional)" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:6px;">
+                            <input type="tel" id="regPhone" placeholder="Phone (optional)" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:6px;">
+                            <input type="password" id="regPassword" placeholder="Password" style="width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:6px; font-size:13px; margin-bottom:8px;">
+                            <div style="display:flex; gap:6px;">
+                                <button onclick="registerUser()" style="flex:1; padding:8px; background:#2ED573; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">Create Account</button>
+                                <button onclick="showLogin()" style="flex:1; padding:8px; background:#f3f4f6; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">Back</button>
+                            </div>
+                        </div>
+                        <div id="userProfile" style="display:none;">
+                            <div style="display:flex; align-items:center; gap:10px; padding:10px; background:#f0edff; border-radius:8px;">
+                                <div style="width:36px; height:36px; border-radius:50%; background:#6C4CE0; color:white; display:flex; align-items:center; justify-content:center; font-weight:700;" id="userAvatar">?</div>
+                                <div>
+                                    <div style="font-weight:700; font-size:14px;" id="userDisplayName">User</div>
+                                    <div style="font-size:11px; color:#6b7280;" id="userDisplayInfo">Logged in</div>
+                                </div>
+                            </div>
+                            <button onclick="logoutUser()" style="width:100%; padding:8px; margin-top:8px; background:#fef2f2; color:#FF4757; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Logout</button>
+                        </div>
+                        <div id="loginStatus" style="font-size:12px; margin-top:6px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="map"></div>
 
-    <!-- SOS / Panic Button (GuardianPath-inspired) -->
+    <!-- SOS / Panic Button -->
     <button class="sos-btn" onclick="triggerSOS()" id="sosBtn" title="Emergency SOS">🚨</button>
 
     <!-- Emergency Overlay -->
@@ -318,7 +418,7 @@
         </div>
     </div>
 
-    <!-- Report Modal (Safree-inspired categories) -->
+    <!-- Report Modal -->
     <div class="emergency-overlay" id="reportModal">
         <div class="emergency-card">
             <h2 style="font-size:18px; font-weight:700; color:#FF4757; margin-bottom:16px;">
@@ -346,6 +446,7 @@
         // ─────────────────────────────────────────
         let map, nightMode = false, currentRoutes = [], routePolylines = [], markers = [];
         let safetyZoneOverlays = [];
+        let safetyZoneLabels = [];
         let userId = 'user_' + Math.random().toString(36).substr(2, 9);
         let currentShareId = null;
         let isRecording = false;
@@ -354,6 +455,7 @@
         let selectedReportCategory = null;
         let selectedReportType = null;
         let reportLat = null, reportLng = null;
+        let currentRouteCoords = null; // for emergency on-route
 
         const ROUTE_COLORS = {
             fastest: '#FF4757',
@@ -366,6 +468,17 @@
             environmental: { label: 'Environmental', icon: '🌿', color: '#FFA502', subtypes: ['poor_lighting', 'broken_road', 'stray_animals', 'flooding', 'construction'] },
             infrastructure: { label: 'Infrastructure', icon: '🏗️', color: '#6C4CE0', subtypes: ['no_streetlight', 'broken_cctv', 'abandoned_building', 'no_footpath', 'blocked_road'] },
             high_risk: { label: 'High Risk', icon: '⚠️', color: '#FF4757', subtypes: ['robbery_area', 'assault_zone', 'drug_activity', 'unsafe_at_night', 'isolated_area'] },
+        };
+
+        // Factor metadata for enhanced breakdown display
+        const FACTOR_META = {
+            lighting: { icon: '🏮', label: 'Lighting', desc_good: 'Well-lit commercial area', desc_bad: 'Dark isolated stretch', color: '#FFA502' },
+            police: { icon: '🚔', label: 'Police Coverage', desc_good: 'Police station nearby', desc_bad: 'Far from police', color: '#6C4CE0' },
+            crowd: { icon: '👥', label: 'Crowd Activity', desc_good: 'Active foot traffic', desc_bad: 'Low foot traffic', color: '#2ED573' },
+            road_type: { icon: '🛣️', label: 'Road Type', desc_good: 'Main road with infrastructure', desc_bad: 'Narrow service road', color: '#3b82f6' },
+            crime: { icon: '🛡️', label: 'Safety Risk', desc_good: 'Low-risk area', desc_bad: 'Higher risk factors', color: '#ef4444' },
+            accessibility: { icon: '♿', label: 'Accessibility', desc_good: 'Good walkways & sidewalks', desc_bad: 'Limited pedestrian infrastructure', color: '#8b5cf6' },
+            reports: { icon: '📢', label: 'Community Reports', desc_good: 'Positive community feedback', desc_bad: 'Safety concerns reported', color: '#f59e0b' },
         };
 
         // ─────────────────────────────────────────
@@ -382,10 +495,9 @@
                 zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
             });
 
-            // Google Places Autocomplete
             const fromInput = document.getElementById('searchFrom');
             const toInput = document.getElementById('searchTo');
-            
+
             const fromAutocomplete = new google.maps.places.Autocomplete(fromInput, {
                 fields: ['geometry', 'name', 'formatted_address'],
                 componentRestrictions: { country: 'in' },
@@ -411,17 +523,13 @@
                 }
             });
 
-            // Right-click to report issue at location
             map.addListener('rightclick', (e) => {
                 reportLat = e.latLng.lat();
                 reportLng = e.latLng.lng();
                 openReportModal();
             });
 
-            // Load guardians
             loadGuardians();
-            
-            // Load safety zones
             loadSafetyZones();
         }
 
@@ -454,7 +562,7 @@
             const endCoords = parseLocation(toEl.value.trim(), toEl);
 
             if (!startCoords || !endCoords) {
-                alert('Could not find location. Try: MUJ, Railway Station, MI Road, Sindhi Camp, Mansarovar');
+                alert('Could not find location. Use autocomplete or try: MUJ, Railway Station, MI Road');
                 return;
             }
 
@@ -476,10 +584,19 @@
                 document.getElementById('loadingSpinner').classList.remove('show');
                 if (data.error) { alert(data.error); return; }
                 currentRoutes = data.routes;
+
+                // Store route coords for emergency on-route
+                if (data.routes.length > 0 && data.routes[0].coordinates) {
+                    currentRouteCoords = JSON.stringify(data.routes[0].coordinates);
+                }
+
                 renderRoutes(data.routes);
                 renderExplanation(data.explanation);
-                renderBreakdown(data.safety_breakdown);
+                renderBreakdown(data.safety_breakdown, data.breakdown_meta);
                 if (data.briefing) renderBriefing(data.briefing);
+
+                document.getElementById('feedbackSection').style.display = 'block';
+                loadFeedbackStats(startCoords[0], startCoords[1]);
             })
             .catch(err => {
                 document.getElementById('loadingSpinner').classList.remove('show');
@@ -488,15 +605,12 @@
         }
 
         function parseLocation(input, inputEl) {
-            if (inputEl && inputEl.dataset.lat && inputEl.dataset.lng) {
-                const coords = [parseFloat(inputEl.dataset.lat), parseFloat(inputEl.dataset.lng)];
-                delete inputEl.dataset.lat;
-                delete inputEl.dataset.lng;
-                return coords;
-            }
+            // Known Jaipur locations — checked FIRST so shortcuts like "muj" always work
             const locations = {
                 'muj': [26.9124, 75.7873], 'mu': [26.9124, 75.7873], 'manipal': [26.9124, 75.7873],
+                'manipal university': [26.9124, 75.7873],
                 'railway': [26.9154, 75.7903], 'station': [26.9154, 75.7903], 'railway station': [26.9154, 75.7903],
+                'jaipur railway station': [26.9154, 75.7903],
                 'mi road': [26.9180, 75.7850], 'mi': [26.9180, 75.7850],
                 'sindhi camp': [26.9200, 75.7850], 'sindhi': [26.9200, 75.7850],
                 'mansarovar': [26.8900, 75.7700], 'sms hospital': [26.9180, 75.7880],
@@ -504,15 +618,34 @@
                 'fortis': [26.9050, 75.7950], 'ashok nagar': [26.9100, 75.7920],
                 'jagatpura': [26.9000, 75.8000], 'world trade park': [26.8950, 75.7800],
                 'wtp': [26.8950, 75.7800],
+                'hawa mahal': [26.9239, 75.8267], 'hawa': [26.9239, 75.8267],
+                'city palace': [26.9255, 75.8236], 'jantar mantar': [26.9246, 75.8227],
+                'nahargarh': [26.9389, 75.8155], 'amer fort': [26.9855, 75.8513],
+                'amer': [26.9855, 75.8513], 'jal mahal': [26.9530, 75.8462],
+                'albert hall': [26.9117, 75.8190], 'rambagh': [26.8962, 75.8097],
+                'vaishali nagar': [26.9120, 75.7700], 'malviya nagar': [26.8580, 75.8100],
+                'c-scheme': [26.9050, 75.7930], 'tonk road': [26.8800, 75.8000],
+                'jln marg': [26.8950, 75.8050], 'vidyadhar nagar': [26.9500, 75.7500],
+                'pratap nagar': [26.8700, 75.8200], 'sanganer': [26.8400, 75.7800],
             };
             const lower = input.toLowerCase().trim();
+            // 1. Exact match in known locations
             if (locations[lower]) return locations[lower];
+            // 2. Raw coordinates
             if (lower.includes(',')) {
                 const parts = lower.split(',').map(s => parseFloat(s.trim()));
                 if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return parts;
             }
+            // 3. Partial match in known locations
             for (const [key, coords] of Object.entries(locations)) {
                 if (lower.includes(key) || key.includes(lower)) return coords;
+            }
+            // 4. Fall back to Google Autocomplete coordinates (if user picked from dropdown)
+            if (inputEl && inputEl.dataset.lat && inputEl.dataset.lng) {
+                const coords = [parseFloat(inputEl.dataset.lat), parseFloat(inputEl.dataset.lng)];
+                delete inputEl.dataset.lat;
+                delete inputEl.dataset.lng;
+                return coords;
             }
             return null;
         }
@@ -592,7 +725,6 @@
                 `;
                 container.appendChild(card);
 
-                // Add report button to each route card
                 const reportBtn = document.createElement('button');
                 reportBtn.innerHTML = '⚠️ Report Issue';
                 reportBtn.style.cssText = 'width:100%; padding:6px; margin-top:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:11px; color:#FF4757; cursor:pointer;';
@@ -616,32 +748,69 @@
                     strokeOpacity: i === idx ? 1 : 0.3,
                 });
             });
+            // Update current route coords for emergency
+            if (currentRoutes[idx] && currentRoutes[idx].coordinates) {
+                currentRouteCoords = JSON.stringify(currentRoutes[idx].coordinates);
+            }
         }
 
         // ─────────────────────────────────────────
-        // RENDER BREAKDOWN, EXPLANATION, BRIEFING
+        // ENHANCED SAFETY BREAKDOWN (Item #13)
         // ─────────────────────────────────────────
-        function renderBreakdown(breakdown) {
+        function renderBreakdown(breakdown, meta) {
             if (!breakdown || Object.keys(breakdown).length === 0) return;
             document.getElementById('breakdownContainer').style.display = 'block';
-            const factors = [
-                { key: 'lighting', icon: '🏮', label: 'Lighting' },
-                { key: 'police', icon: '🚔', label: 'Police' },
-                { key: 'crowd', icon: '👥', label: 'Crowd' },
-                { key: 'road_type', icon: '🛣️', label: 'Road Type' },
-                { key: 'crime', icon: '📊', label: 'Crime Data' },
-                { key: 'accessibility', icon: '♿', label: 'Accessible' },
-                { key: 'reports', icon: '📢', label: 'Reports' },
-            ];
-            document.getElementById('breakdownGrid').innerHTML = factors.map(f => `
-                <div class="breakdown-item" data-factor="${f.key}">
-                    <span>${f.icon}</span>
-                    <span style="color:#6b7280; flex:1;">${f.label}</span>
-                    <span class="breakdown-score" style="color:${(breakdown[f.key]||5) >= 7 ? '#2ED573' : (breakdown[f.key]||5) >= 4 ? '#FFA502' : '#FF4757'}">
-                        ${breakdown[f.key] || '-'}/10
-                    </span>
-                </div>
-            `).join('');
+
+            const grid = document.getElementById('breakdownGrid');
+            grid.innerHTML = Object.entries(FACTOR_META).map(([key, meta2]) => {
+                const val = breakdown[key];
+                if (val === null || val === undefined) {
+                    return `
+                        <div class="breakdown-item">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span>${meta2.icon}</span>
+                                <span style="font-weight:600;">${meta2.label}</span>
+                            </div>
+                            <div style="font-size:11px; color:#9ca3af; font-style:italic;">Insufficient Data</div>
+                        </div>
+                    `;
+                }
+                const pct = val * 10;
+                const color = val >= 7 ? '#2ED573' : val >= 4 ? '#FFA502' : '#FF4757';
+                const desc = val >= 6 ? meta2.desc_good : meta2.desc_bad;
+                return `
+                    <div class="breakdown-item">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span>${meta2.icon}</span>
+                                <span style="font-weight:600;">${meta2.label}</span>
+                            </div>
+                            <span style="font-weight:700; color:${color};">${val}/10</span>
+                        </div>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" style="width:${pct}%; background:linear-gradient(90deg, #FF4757, #FFA502, #2ED573);"></div>
+                        </div>
+                        <div style="font-size:11px; color:#6b7280;">${desc}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Data source indicator
+            const metaEl = document.getElementById('breakdownMeta');
+            if (meta && meta.data_source) {
+                let sourceText = '';
+                if (meta.data_source === 'real_data') {
+                    const parts = [];
+                    if (meta.report_count > 0) parts.push(`${meta.report_count} incident reports`);
+                    if (meta.feedback_count > 0) parts.push(`${meta.feedback_count} user feedback`);
+                    sourceText = `📊 Based on ${parts.join(' + ')} + road data`;
+                } else if (meta.data_source === 'zone_estimates') {
+                    sourceText = '📊 Based on road type + lighting data (limited community reports)';
+                } else {
+                    sourceText = '📊 Based on road infrastructure data';
+                }
+                metaEl.textContent = sourceText;
+            }
         }
 
         function renderExplanation(text) {
@@ -658,7 +827,7 @@
             box.className = `briefing-box ${levelClass}`;
             box.innerHTML = `
                 <div style="font-weight:700; font-size:15px; margin-bottom:8px;">
-                    ${briefing.safety_level === 'HIGH' ? '✅' : briefing.safety_level === 'MODERATE' ? '⚠️' : '🚨'} 
+                    ${briefing.safety_level === 'HIGH' ? '✅' : briefing.safety_level === 'MODERATE' ? '⚠️' : '🚨'}
                     Safety: ${briefing.safety_level} (${briefing.safety_score}/100)
                 </div>
                 <div style="color:#6b7280; margin-bottom:8px;">
@@ -676,6 +845,44 @@
         }
 
         // ─────────────────────────────────────────
+        // FEEDBACK SYSTEM (Item #3)
+        // ─────────────────────────────────────────
+        function submitFeedback(type) {
+            const center = map.getCenter();
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lat: center.lat(),
+                    lng: center.lng(),
+                    feedback_type: type,
+                    user_id: userId,
+                }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById(`fb${type === 'safe' ? 'Safe' : 'Unsafe'}Btn`).classList.add('active');
+                document.getElementById(`fb${type === 'safe' ? 'Unsafe' : 'Safe'}Btn`).classList.remove('active');
+                loadFeedbackStats(center.lat(), center.lng());
+            })
+            .catch(err => alert('Error submitting feedback: ' + err.message));
+        }
+
+        function loadFeedbackStats(lat, lng) {
+            fetch(`/api/feedback/stats?lat=${lat}&lng=${lng}`)
+                .then(r => r.json())
+                .then(data => {
+                    const el = document.getElementById('feedbackStats');
+                    if (data.total > 0) {
+                        el.innerHTML = `👍 ${data.safe_count} safe • 👎 ${data.unsafe_count} unsafe (${data.net_sentiment})`;
+                    } else {
+                        el.textContent = 'No feedback yet for this area. Be the first!';
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // ─────────────────────────────────────────
         // NIGHT MODE
         // ─────────────────────────────────────────
         function toggleNight() {
@@ -686,7 +893,7 @@
         }
 
         // ─────────────────────────────────────────
-        // SAFETY ZONES TOGGLE (SafeRoute Pune)
+        // SAFETY ZONES (Item #16 — proper area bubbles)
         // ─────────────────────────────────────────
         function loadSafetyZones() {
             fetch('/api/safety-zones?hour=12')
@@ -699,62 +906,47 @@
 
         function renderSafetyZones(zones) {
             safetyZoneOverlays.forEach(o => o.setMap(null));
+            safetyZoneLabels.forEach(o => o.setMap(null));
             safetyZoneOverlays = [];
+            safetyZoneLabels = [];
 
             const showSafe = document.getElementById('showSafeZones').checked;
             const showModerate = document.getElementById('showModerateZones').checked;
             const showDanger = document.getElementById('showDangerZones').checked;
 
-            if (showSafe && zones.safe) {
-                zones.safe.forEach(zone => {
-                    if (zone.coordinates && zone.coordinates.length > 0) {
-                        const circle = new google.maps.Circle({
-                            strokeColor: '#2ED573',
-                            strokeOpacity: 0.3,
-                            fillColor: '#2ED573',
-                            fillOpacity: 0.15,
-                            map: map,
-                            center: { lat: zone.coordinates[0][1] || zone.coordinates[0][0], lng: zone.coordinates[0][0] || zone.coordinates[0][1] },
-                            radius: 200,
-                        });
-                        safetyZoneOverlays.push(circle);
-                    }
+            function drawZoneList(zoneList, color, fillOpacity) {
+                zoneList.forEach(zone => {
+                    // GeoJSON coords are [lng, lat]
+                    const circle = new google.maps.Circle({
+                        strokeColor: color,
+                        strokeOpacity: 0.4,
+                        fillColor: color,
+                        fillOpacity: fillOpacity,
+                        map: map,
+                        center: { lat: zone.center_lat, lng: zone.center_lng },
+                        radius: zone.radius || 500,
+                    });
+                    safetyZoneOverlays.push(circle);
+
+                    // Add label
+                    const label = new google.maps.Marker({
+                        position: { lat: zone.center_lat, lng: zone.center_lng },
+                        map: map,
+                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 0 },
+                        label: {
+                            text: `${zone.name || ''} (${zone.score})`,
+                            color: color,
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                        },
+                    });
+                    safetyZoneLabels.push(label);
                 });
             }
 
-            if (showModerate && zones.moderate) {
-                zones.moderate.forEach(zone => {
-                    if (zone.coordinates && zone.coordinates.length > 0) {
-                        const circle = new google.maps.Circle({
-                            strokeColor: '#FFA502',
-                            strokeOpacity: 0.3,
-                            fillColor: '#FFA502',
-                            fillOpacity: 0.15,
-                            map: map,
-                            center: { lat: zone.coordinates[0][1] || zone.coordinates[0][0], lng: zone.coordinates[0][0] || zone.coordinates[0][1] },
-                            radius: 200,
-                        });
-                        safetyZoneOverlays.push(circle);
-                    }
-                });
-            }
-
-            if (showDanger && zones.danger) {
-                zones.danger.forEach(zone => {
-                    if (zone.coordinates && zone.coordinates.length > 0) {
-                        const circle = new google.maps.Circle({
-                            strokeColor: '#FF4757',
-                            strokeOpacity: 0.4,
-                            fillColor: '#FF4757',
-                            fillOpacity: 0.2,
-                            map: map,
-                            center: { lat: zone.coordinates[0][1] || zone.coordinates[0][0], lng: zone.coordinates[0][0] || zone.coordinates[0][1] },
-                            radius: 200,
-                        });
-                        safetyZoneOverlays.push(circle);
-                    }
-                });
-            }
+            if (showSafe && zones.safe) drawZoneList(zones.safe, '#2ED573', 0.12);
+            if (showModerate && zones.moderate) drawZoneList(zones.moderate, '#FFA502', 0.15);
+            if (showDanger && zones.danger) drawZoneList(zones.danger, '#FF4757', 0.18);
         }
 
         function toggleSafetyZones() {
@@ -762,13 +954,13 @@
         }
 
         // ─────────────────────────────────────────
-        // SOS / PANIC MODE (GuardianPath)
+        // SOS / PANIC MODE
         // ─────────────────────────────────────────
         function triggerSOS() {
             const center = map.getCenter();
             const overlay = document.getElementById('emergencyOverlay');
             const content = document.getElementById('emergencyContent');
-            
+
             content.innerHTML = `
                 <h2 style="font-size:22px; font-weight:700; color:#FF4757; margin-bottom:16px;">
                     🚨 SOS ACTIVATED
@@ -804,7 +996,6 @@
             `;
             overlay.classList.add('show');
 
-            // Call SOS API
             fetch('/api/sos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -857,31 +1048,54 @@
         }
 
         // ─────────────────────────────────────────
-        // AUDIO RECORDING (SafeRoute Pune)
+        // AUDIO RECORDING — uploads actual audio file to server
         // ─────────────────────────────────────────
         async function toggleAudioRecording() {
             const btn = document.getElementById('audioRecordBtn');
             const status = document.getElementById('recordingStatus');
-            
+
             if (!isRecording) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
-                    
+                    const startTime = Date.now();
+
                     mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
+                    mediaRecorder.onstop = async () => {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const audioUrl = URL.createObjectURL(audioBlob);
-                        console.log('Audio recorded:', audioUrl);
-                        // In production, upload to server
+                        const duration = (Date.now() - startTime) / 1000;
+                        const center = map.getCenter();
+
+                        // Upload actual audio file to server
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, `recording_${Date.now()}.webm`);
+                        formData.append('user_id', currentUser ? currentUser.id : userId);
+                        formData.append('lat', center.lat());
+                        formData.append('lng', center.lng());
+                        formData.append('duration_seconds', duration);
+
+                        try {
+                            const resp = await fetch('/api/recording/upload', {
+                                method: 'POST',
+                                body: formData,
+                            });
+                            const data = await resp.json();
+                            if (data.status === 'stored') {
+                                status.innerHTML = '<div class="recording-dot"></div><span style="font-size:13px; color:#2ED573; font-weight:600;">Recording saved! (ID: ' + data.id + ')</span>';
+                                setTimeout(() => { status.style.display = 'none'; }, 3000);
+                            }
+                        } catch (err) {
+                            console.error('Upload failed:', err);
+                        }
                     };
-                    
+
                     mediaRecorder.start();
                     isRecording = true;
                     btn.innerHTML = '⏹️ Stop Recording';
                     btn.style.background = '#6b7280';
                     status.style.display = 'flex';
+                    status.innerHTML = '<div class="recording-dot"></div><span style="font-size:13px; color:#FF4757; font-weight:600;">Recording...</span>';
                 } catch (err) {
                     alert('Microphone access denied. Please allow microphone access to record audio.');
                 }
@@ -891,19 +1105,16 @@
                 isRecording = false;
                 btn.innerHTML = '🔴 Start Recording';
                 btn.style.background = '#FF4757';
-                status.style.display = 'none';
             }
         }
 
         // ─────────────────────────────────────────
-        // GUARDIAN NETWORK (Safree)
+        // GUARDIAN NETWORK
         // ─────────────────────────────────────────
         function loadGuardians() {
             fetch(`/api/guardians/${userId}`)
                 .then(r => r.json())
-                .then(data => {
-                    renderGuardians(data.guardians);
-                })
+                .then(data => renderGuardians(data.guardians))
                 .catch(() => {});
         }
 
@@ -926,35 +1137,24 @@
             `).join('');
         }
 
-        function openGuardianModal() {
-            document.getElementById('guardianModal').classList.add('show');
-        }
-
-        function closeGuardianModal() {
-            document.getElementById('guardianModal').classList.remove('show');
-        }
+        function openGuardianModal() { document.getElementById('guardianModal').classList.add('show'); }
+        function closeGuardianModal() { document.getElementById('guardianModal').classList.remove('show'); }
 
         function saveGuardian() {
             const name = document.getElementById('guardianName').value.trim();
             const phone = document.getElementById('guardianPhone').value.trim();
             const email = document.getElementById('guardianEmail').value.trim();
             const relationship = document.getElementById('guardianRelation').value;
-
-            if (!name || !phone) {
-                alert('Name and phone are required');
-                return;
-            }
-
+            if (!name || !phone) { alert('Name and phone are required'); return; }
             fetch('/api/guardians', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId, name, phone, email, relationship }),
             })
             .then(r => r.json())
-            .then(data => {
+            .then(() => {
                 closeGuardianModal();
                 loadGuardians();
-                // Clear form
                 document.getElementById('guardianName').value = '';
                 document.getElementById('guardianPhone').value = '';
                 document.getElementById('guardianEmail').value = '';
@@ -970,19 +1170,14 @@
         }
 
         // ─────────────────────────────────────────
-        // LIVE LOCATION SHARING (Safree)
+        // LIVE LOCATION SHARING
         // ─────────────────────────────────────────
         function startLocationShare() {
             const center = map.getCenter();
-            
             fetch('/api/location/share', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: userId,
-                    lat: center.lat(),
-                    lng: center.lng(),
-                }),
+                body: JSON.stringify({ user_id: userId, lat: center.lat(), lng: center.lng() }),
             })
             .then(r => r.json())
             .then(data => {
@@ -991,8 +1186,6 @@
                 document.getElementById('shareLink').textContent = shareUrl;
                 document.getElementById('shareLinkContainer').style.display = 'block';
                 document.getElementById('shareLocationBtn').style.display = 'none';
-                
-                // Start updating location
                 startLocationUpdates();
             })
             .catch(err => alert('Error starting location share: ' + err.message));
@@ -1000,7 +1193,6 @@
 
         function startLocationUpdates() {
             if (!currentShareId) return;
-            
             setInterval(() => {
                 if (!currentShareId) return;
                 const center = map.getCenter();
@@ -1009,7 +1201,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lat: center.lat(), lng: center.lng() }),
                 }).catch(() => {});
-            }, 10000); // Update every 10 seconds
+            }, 10000);
         }
 
         function stopLocationShare() {
@@ -1028,7 +1220,6 @@
             navigator.clipboard.writeText(link)
                 .then(() => alert('Link copied to clipboard!'))
                 .catch(() => {
-                    // Fallback
                     const textarea = document.createElement('textarea');
                     textarea.value = link;
                     document.body.appendChild(textarea);
@@ -1040,7 +1231,7 @@
         }
 
         // ─────────────────────────────────────────
-        // REPORT MODAL (Safree categories)
+        // REPORT MODAL
         // ─────────────────────────────────────────
         function openReportModal() {
             document.getElementById('reportModal').classList.add('show');
@@ -1056,7 +1247,6 @@
         function renderReportCategories() {
             const container = document.getElementById('reportCategories');
             container.innerHTML = '<div style="font-size:13px; font-weight:600; margin-bottom:8px;">Category:</div>';
-            
             Object.entries(REPORT_CATEGORIES).forEach(([key, cat]) => {
                 const tag = document.createElement('span');
                 tag.className = `report-tag ${selectedReportCategory === key ? 'active' : ''}`;
@@ -1076,7 +1266,6 @@
             const container = document.getElementById('reportSubtypes');
             const cat = REPORT_CATEGORIES[category];
             if (!cat) return;
-            
             container.innerHTML = '<div style="font-size:13px; font-weight:600; margin-bottom:8px;">Issue:</div>';
             cat.subtypes.forEach(subtype => {
                 const tag = document.createElement('span');
@@ -1095,45 +1284,33 @@
 
         function submitReport() {
             if (!selectedReportCategory || !selectedReportType) {
-                alert('Please select a category and issue type');
-                return;
+                alert('Please select a category and issue type'); return;
             }
             if (!reportLat || !reportLng) {
-                alert('Location not set. Right-click on the map to set report location.');
-                return;
+                alert('Location not set. Right-click on the map to set report location.'); return;
             }
-
             const description = document.getElementById('reportDescription').value.trim();
             const severity = document.getElementById('reportSeverity').value;
-
             fetch('/api/report', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    lat: reportLat,
-                    lng: reportLng,
-                    type: selectedReportType,
-                    category: selectedReportCategory,
-                    subtype: selectedReportType,
-                    description: description,
-                    severity: severity,
+                    lat: reportLat, lng: reportLng,
+                    type: selectedReportType, category: selectedReportCategory,
+                    subtype: selectedReportType, description, severity,
                 }),
             })
             .then(r => r.json())
             .then(data => {
                 closeReportModal();
                 alert(`Report submitted! ID: ${data.id}`);
-                // Add marker to map
                 const marker = new google.maps.Marker({
                     position: { lat: reportLat, lng: reportLng },
                     map: map,
                     icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 10,
+                        path: google.maps.SymbolPath.CIRCLE, scale: 10,
                         fillColor: REPORT_CATEGORIES[selectedReportCategory].color,
-                        fillOpacity: 0.7,
-                        strokeColor: '#fff',
-                        strokeWeight: 2,
+                        fillOpacity: 0.7, strokeColor: '#fff', strokeWeight: 2,
                     },
                     title: selectedReportType.replace(/_/g, ' '),
                 });
@@ -1143,19 +1320,22 @@
         }
 
         // ─────────────────────────────────────────
-        // EMERGENCY (existing, enhanced)
+        // EMERGENCY (Item #10 — nearest on route)
         // ─────────────────────────────────────────
         function openEmergency() {
             document.getElementById('emergencyOverlay').classList.add('show');
             const center = map.getCenter();
-            fetch(`/api/emergency?lat=${center.lat()}&lng=${center.lng()}`)
+            let url = `/api/emergency?lat=${center.lat()}&lng=${center.lng()}`;
+            if (currentRouteCoords) {
+                url += `&route_coords=${encodeURIComponent(currentRouteCoords)}`;
+            }
+            fetch(url)
                 .then(r => r.json())
                 .then(data => {
                     let html = `
                         <h2 style="font-size:20px; font-weight:700; color:#FF4757; margin-bottom:16px;">
                             🚨 Emergency Services
-                        </h2>
-                    `;
+                        </h2>`;
                     if (data.police) {
                         html += `<div style="padding:12px; background:#fef2f2; border-radius:10px; margin-bottom:10px;">
                             <div style="font-weight:700; color:#FF4757; margin-bottom:4px;">🚔 Nearest Police Station</div>
@@ -1179,8 +1359,7 @@
                                 <a href="tel:112" style="padding:10px; background:#fef2f2; border-radius:8px; text-decoration:none; color:#374151; font-size:13px;">📞 112 — Emergency</a>
                                 <a href="tel:1091" style="padding:10px; background:#fef2f2; border-radius:8px; text-decoration:none; color:#374151; font-size:13px;">📞 1091 — Women</a>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                     document.getElementById('emergencyContent').innerHTML = html;
                 })
                 .catch(() => {
@@ -1193,15 +1372,129 @@
         }
 
         // ─────────────────────────────────────────
+        // HELP CENTER & AUTH
+        // ─────────────────────────────────────────
+        let currentUser = null;
+
+        function toggleHelp() {
+            const content = document.getElementById('helpContent');
+            const arrow = document.getElementById('helpArrow');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                arrow.textContent = '▼';
+            }
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('loginStatus').innerHTML = '';
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginStatus').innerHTML = '';
+        }
+
+        function registerUser() {
+            const full_name = document.getElementById('regName').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            if (!username || !password) {
+                document.getElementById('loginStatus').innerHTML = '<span style="color:#FF4757;">Username and password required</span>';
+                return;
+            }
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, full_name, email, phone }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'registered') {
+                    currentUser = data.user;
+                    showUserProfile(data.user);
+                    document.getElementById('loginStatus').innerHTML = '<span style="color:#2ED573;">✅ Account created!</span>';
+                } else {
+                    document.getElementById('loginStatus').innerHTML = '<span style="color:#FF4757;">❌ ' + (data.error || 'Registration failed') + '</span>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('loginStatus').innerHTML = '<span style="color:#FF4757;">Connection error</span>';
+            });
+        }
+
+        function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            if (!username || !password) {
+                document.getElementById('loginStatus').innerHTML = '<span style="color:#FF4757;">Please enter username and password</span>';
+                return;
+            }
+
+            // Try regular login first, then admin
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'authenticated') {
+                    currentUser = data.user;
+                    showUserProfile(data.user);
+                } else {
+                    document.getElementById('loginStatus').innerHTML = '<span style="color:#FF4757;">❌ ' + (data.error || 'Invalid credentials') + '</span>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('loginStatus').innerHTML = '<span style="color:#FF4757;">Connection error</span>';
+            });
+        }
+
+        function showUserProfile(user) {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('userProfile').style.display = 'block';
+            document.getElementById('userDisplayName').textContent = user.full_name || user.username;
+            document.getElementById('userDisplayInfo').textContent = user.role === 'admin' ? '🛡️ Admin' : (user.email || 'User');
+            document.getElementById('userAvatar').textContent = (user.full_name || user.username).charAt(0).toUpperCase();
+            document.getElementById('loginStatus').innerHTML = '';
+            userId = 'user_' + user.id;
+            loadGuardians();
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('userProfile').style.display = 'none';
+            userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Check if user was previously logged in (localStorage)
+        try {
+            const saved = localStorage.getItem('saferoute_user');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                showUserProfile(currentUser);
+            }
+        } catch(e) {}
+
+        // ─────────────────────────────────────────
         // SIDEBAR TOGGLE
         // ─────────────────────────────────────────
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('collapsed');
         }
-
-        map?.addListener?.('click', () => {
-            if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('collapsed');
-        });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.target.id === 'searchFrom' || e.target.id === 'searchTo')) searchRoutes();

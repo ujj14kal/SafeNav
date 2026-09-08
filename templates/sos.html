@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute — Emergency SOS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+
+        .header { background: linear-gradient(135deg, #6C4CE0, #8B5CF6); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        .header h1 { font-size: 20px; color: white; }
+        .header .subtitle { font-size: 12px; opacity: 0.8; color: white; }
+        .nav-links { display: flex; gap: 8px; margin-left: auto; }
+        .nav-links a { color: white; text-decoration: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; background: rgba(255,255,255,0.15); }
+        .nav-links a.active { background: rgba(255,255,255,0.3); font-weight: 600; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
+
+        /* Guardian Card */
+        .card { background: #1a1a2e; border-radius: 16px; padding: 24px; margin-bottom: 20px; border: 1px solid #2a2a40; }
+        .card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card h2 .icon { font-size: 20px; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; color: #a0a0b0; margin-bottom: 6px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 14px; background: #12121f; border: 1px solid #3a3a50; border-radius: 10px; color: white; font-size: 15px; outline: none; transition: border 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: #6C4CE0; }
+        .form-group input::placeholder { color: #555; }
+        .form-group .hint { font-size: 11px; color: #666; margin-top: 4px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .btn { padding: 12px 24px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #6C4CE0; color: white; }
+        .btn-primary:hover { background: #5a3dd0; }
+        .btn-danger { background: #FF4757; color: white; }
+        .btn-danger:hover { background: #e03040; }
+        .btn-outline { background: transparent; border: 1px solid #3a3a50; color: #a0a0b0; }
+        .btn-outline:hover { border-color: #6C4CE0; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .guardian-status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #12121f; border-radius: 10px; margin-bottom: 16px; font-size: 13px; }
+        .guardian-status.has-guardian { border-left: 3px solid #2ED573; }
+        .guardian-status.no-guardian { border-left: 3px solid #FF4757; }
+
+        /* SOS Button */
+        .sos-section { text-align: center; padding: 40px 0; }
+        .sos-btn { width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #FF6B6B, #FF4757); border: 6px solid #FF4757; color: white; font-size: 36px; font-weight: 900; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 40px rgba(255, 71, 87, 0.3); letter-spacing: 4px; }
+        .sos-btn:hover { transform: scale(1.05); box-shadow: 0 0 60px rgba(255, 71, 87, 0.5); }
+        .sos-btn:active { transform: scale(0.95); }
+        .sos-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .sos-btn.sending { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 40px rgba(255, 71, 87, 0.3); } 50% { box-shadow: 0 0 80px rgba(255, 71, 87, 0.6); } }
+
+        .sos-hint { font-size: 13px; color: #666; margin-top: 16px; }
+
+        /* GPS Status */
+        .gps-status { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 20px; font-size: 13px; }
+        .gps-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .gps-dot.ok { background: #2ED573; }
+        .gps-dot.waiting { background: #FFA502; animation: blink 1s infinite; }
+        .gps-dot.error { background: #FF4757; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Result Panel */
+        .result-panel { display: none; }
+        .result-panel.visible { display: block; }
+        .result-panel.success { border-color: #2ED573; }
+        .result-panel.error { border-color: #FF4757; }
+        .result-panel.warning { border-color: #FFA502; }
+
+        .result-header { font-size: 18px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .result-detail { font-size: 13px; color: #a0a0b0; margin-bottom: 8px; line-height: 1.6; }
+        .result-detail a { color: #6C4CE0; text-decoration: underline; }
+
+        .sms-preview { background: #12121f; border-radius: 10px; padding: 14px; font-size: 12px; color: #a0a0b0; white-space: pre-wrap; font-family: monospace; margin: 12px 0; line-height: 1.5; border-left: 3px solid #6C4CE0; }
+
+        .emergency-numbers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+        .emergency-num { background: #12121f; padding: 10px; border-radius: 8px; text-align: center; }
+        .emergency-num .label { font-size: 11px; color: #666; }
+        .emergency-num .number { font-size: 16px; font-weight: 700; color: #FF4757; }
+
+        .divider { height: 1px; background: #2a2a40; margin: 20px 0; }
+
+        /* Loading spinner */
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>🛡️ SafeRoute</h1>
+            <div class="subtitle">Emergency SOS</div>
+        </div>
+        <div class="nav-links">
+            <a href="/">🗺️ Route</a>
+            <a href="/heatmap">🔥 Heatmap</a>
+            <a href="/sos" class="active">🆘 SOS</a>
+            <a href="/admin">📊 Admin</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Guardian Configuration -->
+        <div class="card">
+            <h2><span class="icon">👤</span> Emergency Guardian</h2>
+            <div id="guardianStatus" class="guardian-status no-guardian">
+                <span>⚠️</span> <span id="guardianStatusText">No guardian configured. Add one below.</span>
+            </div>
+
+            <div id="guardianForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Guardian Name</label>
+                        <input type="text" id="guardianName" placeholder="e.g. Mom, Dad, Friend">
+                    </div>
+                    <div class="form-group">
+                        <label>Relationship</label>
+                        <select id="guardianRelationship">
+                            <option value="parent">Parent</option>
+                            <option value="sibling">Sibling</option>
+                            <option value="friend" selected>Friend</option>
+                            <option value="spouse">Spouse/Partner</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number (with country code)</label>
+                    <input type="tel" id="guardianPhone" placeholder="+91 98765 43210">
+                    <div class="hint">Include country code (e.g. +91 for India). This number will receive emergency SMS alerts.</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Your Name (for SMS)</label>
+                        <input type="text" id="userName" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary" onclick="saveGuardian()" style="width:100%">💾 Save Guardian</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GPS Status -->
+        <div class="gps-status">
+            <div class="gps-dot waiting" id="gpsDot"></div>
+            <span id="gpsText">Getting your location...</span>
+        </div>
+
+        <!-- SOS Button -->
+        <div class="sos-section">
+            <button class="sos-btn" id="sosBtn" onclick="triggerSOS()">
+                SOS
+            </button>
+            <div class="sos-hint">Press to send your location to your guardian</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Result Panel -->
+        <div class="card result-panel" id="resultPanel">
+            <div class="result-header" id="resultHeader"></div>
+            <div class="result-detail" id="resultDetail"></div>
+            <div class="sms-preview hidden" id="smsPreview"></div>
+            <div class="emergency-numbers hidden" id="emergencyNumbers"></div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──
+        let currentLat = null;
+        let currentLng = null;
+        let gpsAvailable = false;
+        const USER_ID = 'default_user'; // In production, use real auth
+
+        // ── Initialize ──
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGuardian();
+            requestGPS();
+        });
+
+        // ── GPS Location ──
+        function requestGPS() {
+            const dot = document.getElementById('gpsDot');
+            const text = document.getElementById('gpsText');
+
+            if (!navigator.geolocation) {
+                dot.className = 'gps-dot error';
+                text.textContent = 'Geolocation not supported by this browser';
+                gpsAvailable = false;
+                return;
+            }
+
+            dot.className = 'gps-dot waiting';
+            text.textContent = 'Requesting your location...';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    currentLat = position.coords.latitude;
+                    currentLng = position.coords.longitude;
+                    gpsAvailable = true;
+
+                    dot.className = 'gps-dot ok';
+                    text.textContent = `Location: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)} (±${Math.round(position.coords.accuracy)}m)`;
+
+                    // Reject obviously bad coordinates
+                    if (currentLat === 0 && currentLng === 0) {
+                        dot.className = 'gps-dot error';
+                        text.textContent = 'GPS returned (0,0) — location unavailable';
+                        gpsAvailable = false;
+                    }
+                },
+                (error) => {
+                    gpsAvailable = false;
+                    dot.className = 'gps-dot error';
+
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            text.textContent = 'Location permission denied. Please enable it in browser settings.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            text.textContent = 'Location unavailable. GPS may be disabled.';
+                            break;
+                        case error.TIMEOUT:
+                            text.textContent = 'Location request timed out. Retrying...';
+                            setTimeout(requestGPS, 3000);
+                            break;
+                        default:
+                            text.textContent = 'Unknown GPS error: ' + error.message;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+            );
+        }
+
+        // ── Guardian Management ──
+        async function loadGuardian() {
+            try {
+                const resp = await fetch(`/api/guardians/${USER_ID}`);
+                const data = await resp.json();
+                const guardians = data.guardians || [];
+
+                const status = document.getElementById('guardianStatus');
+                const statusText = document.getElementById('guardianStatusText');
+
+                if (guardians.length > 0) {
+                    const g = guardians[0]; // Primary or first
+                    status.className = 'guardian-status has-guardian';
+                    statusText.textContent = `Guardian: ${g.name} (${g.phone}) — ${g.relationship}`;
+                    document.getElementById('guardianName').value = g.name;
+                    document.getElementById('guardianPhone').value = g.phone;
+                    document.getElementById('guardianRelationship').value = g.relationship || 'friend';
+                } else {
+                    status.className = 'guardian-status no-guardian';
+                    statusText.textContent = 'No guardian configured. Add one below.';
+                }
+            } catch (e) {
+                console.error('Failed to load guardian:', e);
+            }
+        }
+
+        async function saveGuardian() {
+            const name = document.getElementById('guardianName').value.trim();
+            const phone = document.getElementById('guardianPhone').value.trim();
+            const relationship = document.getElementById('guardianRelationship').value;
+            const userName = document.getElementById('userName').value.trim() || USER_ID;
+
+            if (!name || !phone) {
+                showResult('error', '⚠️ Missing Info', 'Please enter both guardian name and phone number.');
+                return;
+            }
+
+            try {
+                // Delete existing guardians first (we keep one primary)
+                const existing = await fetch(`/api/guardians/${USER_ID}`);
+                const existingData = await existing.json();
+                for (const g of (existingData.guardians || [])) {
+                    await fetch(`/api/guardians/${g.id}`, { method: 'DELETE' });
+                }
+
+                // Add new guardian
+                const resp = await fetch('/api/guardians', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: USER_ID,
+                        name: name,
+                        phone: phone,
+                        relationship: relationship,
+                        is_primary: true,
+                    }),
+                });
+
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    showResult('success', '✅ Guardian Saved', `${name} (${phone}) is now your emergency guardian. They will receive SMS alerts when you trigger SOS.`);
+                    loadGuardian();
+                } else {
+                    showResult('error', '❌ Save Failed', data.error || 'Could not save guardian.');
+                }
+            } catch (e) {
+                showResult('error', '❌ Network Error', 'Could not connect to server. Check your connection.');
+            }
+        }
+
+        // ── SOS Trigger ──
+        async function triggerSOS() {
+            const btn = document.getElementById('sosBtn');
+
+            // Check GPS
+            if (!gpsAvailable || currentLat === null || currentLng === null) {
+                showResult('error', '❌ Location Unavailable',
+                    'Cannot send SOS without your location. Please:\n' +
+                    '1. Allow location access when prompted\n' +
+                    '2. Enable GPS on your device\n' +
+                    '3. Make sure you\'re not in airplane mode'
+                );
+                requestGPS(); // Try again
+                return;
+            }
+
+            // Check guardian
+            const guardianResp = await fetch(`/api/guardians/${USER_ID}`);
+            const guardianData = await guardianResp.json();
+            if (!guardianData.guardians || guardianData.guardians.length === 0) {
+                showResult('warning', '⚠️ No Guardian Configured',
+                    'You need to save a guardian phone number before triggering SOS. Please fill in the guardian form above.'
+                );
+                return;
+            }
+
+            // Confirm
+            if (!confirm(`Send emergency alert to ${guardianData.guardians[0].name} (${guardianData.guardians[0].phone})?\n\nYour location: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`)) {
+                return;
+            }
+
+            // Send SOS
+            btn.disabled = true;
+            btn.classList.add('sending');
+            btn.textContent = '...';
+
+            try {
+                const userName = document.getElementById('userName').value.trim() || 'User';
+                const resp = await fetch('/api/sos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: USER_ID,
+                        lat: currentLat,
+                        lng: currentLng,
+                        user_name: userName,
+                        type: 'panic',
+                    }),
+                });
+
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    handleSosSuccess(data);
+                } else {
+                    handleSosError(data);
+                }
+            } catch (e) {
+                showResult('error', '❌ Network Error',
+                    'Could not send SOS. Check your internet connection and try again.\n\n' +
+                    'In an emergency, call directly:\n• Police: 100\n• Emergency: 112\n• Women Helpline: 1091'
+                );
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('sending');
+                btn.textContent = 'SOS';
+            }
+        }
+
+        function handleSosSuccess(data) {
+            const sms = data.sms || {};
+            const smsResult = (sms.results || [])[0] || {};
+
+            let title, detail, className;
+
+            if (sms.sent && smsResult.method === 'twilio') {
+                className = 'success';
+                title = '✅ Emergency SMS Sent!';
+                detail = `SMS successfully sent to <b>${smsResult.guardian_name}</b> (${smsResult.guardian_phone}) via Twilio.\n\n` +
+                         `📍 Location: ${data.location.lat.toFixed(5)}, ${data.location.lng.toFixed(5)}\n` +
+                         `🔗 <a href="${data.google_maps_link}" target="_blank">Open in Google Maps</a>\n` +
+                         `⏰ Time: ${new Date(data.timestamp).toLocaleString()}`;
+            } else if (sms.sent && smsResult.method === 'manual') {
+                className = 'warning';
+                title = '⚠️ SMS Ready (Manual Send Required)';
+                detail = `SMS service is not configured. The message is ready but needs to be sent manually.\n\n` +
+                         `📍 Location: ${data.location.lat.toFixed(5)}, ${data.location.lng.toFixed(5)}\n` +
+                         `🔗 <a href="${data.google_maps_link}" target="_blank">Open in Google Maps</a>`;
+                document.getElementById('smsPreview').textContent = smsResult.sms_content || '';
+                document.getElementById('smsPreview').classList.remove('hidden');
+            } else {
+                className = 'error';
+                title = '❌ SMS Failed';
+                detail = smsResult.error || 'Could not send SMS to guardian.';
+            }
+
+            // Show emergency numbers
+            if (data.emergency_numbers) {
+                const nums = data.emergency_numbers;
+                const numHtml = Object.entries(nums).map(([k, v]) =>
+                    `<div class="emergency-num"><div class="label">${k.replace(/_/g, ' ')}</div><div class="number">${v}</div></div>`
+                ).join('');
+                document.getElementById('emergencyNumbers').innerHTML = numHtml;
+                document.getElementById('emergencyNumbers').classList.remove('hidden');
+            }
+
+            // Show nearest services
+            if (data.nearest_police) {
+                detail += `\n\n🚔 Nearest Police: ${data.nearest_police.name} (${data.nearest_police.distance}m, ~${data.nearest_police.eta_minutes} min)`;
+            }
+            if (data.nearest_hospital) {
+                detail += `\n🏥 Nearest Hospital: ${data.nearest_hospital.name} (${data.nearest_hospital.distance}m, ~${data.nearest_hospital.eta_minutes} min)`;
+            }
+
+            showResult(className, title, detail);
+        }
+
+        function handleSosError(data) {
+            const error = data.error || 'Unknown error';
+
+            if (error.includes('lat and lng')) {
+                showResult('error', '❌ Location Required',
+                    'GPS coordinates are missing. Please:\n' +
+                    '1. Allow location access in your browser\n' +
+                    '2. Make sure GPS is enabled on your device\n' +
+                    '3. Try again\n\n' +
+                    'If GPS is unavailable, call emergency services directly:\n• Police: 100\n• Emergency: 112'
+                );
+            } else if (error.includes('Invalid coordinates')) {
+                showResult('error', '❌ Invalid Location',
+                    'The GPS returned invalid coordinates. This may happen indoors or in areas with poor GPS signal.\n\n' +
+                    'Try moving to an area with better sky visibility, or call:\n• Police: 100\n• Emergency: 112'
+                );
+            } else if (error.includes('No guardian')) {
+                showResult('warning', '⚠️ No Guardian',
+                    'Please save a guardian phone number in the form above before triggering SOS.'
+                );
+            } else {
+                showResult('error', '❌ SOS Failed', error);
+            }
+        }
+
+        // ── UI Helpers ──
+        function showResult(type, title, detail) {
+            const panel = document.getElementById('resultPanel');
+            panel.className = `card result-panel visible ${type}`;
+            document.getElementById('resultHeader').innerHTML = title;
+            document.getElementById('resultDetail').innerHTML = detail.replace(/\n/g, '<br>');
+
+            // Scroll to result
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    </script>
+</body>
+</html>

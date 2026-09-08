@@ -36,3 +36,6 @@ requests==2.32.3
 
 # Text-to-Speech (for future voice features)
 edge-tts==7.0.2
+
+# SMS (Twilio for emergency alerts)
+twilio>=9.0.0

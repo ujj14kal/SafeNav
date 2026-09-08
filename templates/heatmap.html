@@ -10,7 +10,7 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         #map { width: 100%; height: 100vh; }
         .sidebar {
-            position: fixed; top: 0; left: 0; width: 360px; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 380px; height: 100vh;
             background: #fff; z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.1);
             overflow-y: auto;
         }
@@ -31,6 +31,10 @@
             padding: 10px 16px; border-bottom: 1px solid #f3f4f6;
             display: flex; justify-content: space-between; align-items: center;
         }
+        .section-desc {
+            padding: 8px 16px; font-size: 12px; color: #6b7280;
+            line-height: 1.5; border-bottom: 1px solid #f3f4f6;
+        }
     </style>
 </head>
 <body>
@@ -44,6 +48,9 @@
             <a href="/heatmap" class="nav-link" style="background:#6C4CE0;color:white;">🔥 Heatmap</a>
             <a href="/school" class="nav-link">🏫 School</a>
             <a href="/admin" class="nav-link">📊 Admin</a>
+        </div>
+        <div class="section-desc">
+            🔥 <strong>Heatmap</strong> — View real-time safety conditions across the city. Colors show safety scores from green (safe) to red (dangerous). Adjust the time slider to see how safety changes throughout the day.
         </div>
         <div style="padding: 16px;">
             <label style="font-size:13px; font-weight:700;">⏰ Time of Day</label>
@@ -63,6 +70,13 @@
                 <span style="color:#2ED573;">● 61-100 Safe</span>
             </div>
         </div>
+
+        <!-- Feedback Section -->
+        <div style="padding: 12px 16px; border-top: 1px solid #e5e7eb;">
+            <h3 style="font-size:13px; font-weight:700; margin-bottom:8px;">📍 Click map to check a location</h3>
+            <div id="locationInfo" style="font-size:12px; color:#6b7280;">Click anywhere on the heatmap to see detailed safety info</div>
+        </div>
+
         <h3 style="padding: 8px 16px 4px; font-size:13px; font-weight:700;">🔴 Most Dangerous Zones</h3>
         <div id="dangerZones"></div>
     </div>
@@ -79,10 +93,30 @@
                 streetViewControl: false,
             });
             heatmapDataLayer = new google.maps.Data({ map: map });
+
+            // Click on map to show detailed info
+            map.addListener('click', (e) => {
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+                fetch(`/api/feedback/stats?lat=${lat}&lng=${lng}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        let infoHtml = `<strong>Location:</strong> ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>`;
+                        if (data.total > 0) {
+                            infoHtml += `👍 ${data.safe_count} safe • 👎 ${data.unsafe_count} unsafe`;
+                        } else {
+                            infoHtml += `<em>No community feedback for this spot</em>`;
+                        }
+                        document.getElementById('locationInfo').innerHTML = infoHtml;
+                    })
+                    .catch(() => {});
+            });
+
             loadHeatmap(12);
         }
 
         function getHeatmapColor(score) {
+            if (score === null || score === undefined) return '#9ca3af';
             if (score < 20) return '#FF4757';
             if (score < 30) return '#FF6B6B';
             if (score < 40) return '#FF8E53';
@@ -108,8 +142,13 @@
                         const score = e.feature.getProperty('safety_score');
                         const roadType = e.feature.getProperty('road_type');
                         const lit = e.feature.getProperty('lit');
+                        const zoneName = e.feature.getProperty('zone_name');
+                        const dataSource = e.feature.getProperty('data_source');
+                        let content = `<b>Safety: ${score !== null ? score + '/100' : 'Insufficient Data'}</b><br>Road: ${roadType}<br>Lit: ${lit ? 'Yes ✅' : 'No ❌'}`;
+                        if (zoneName) content += `<br>Zone: ${zoneName}`;
+                        if (dataSource) content += `<br><small>Source: ${dataSource}</small>`;
                         new google.maps.InfoWindow({
-                            content: `<b>Safety: ${score}/100</b><br>Road: ${roadType}<br>Lit: ${lit ? 'Yes ✅' : 'No ❌'}`,
+                            content: content,
                             position: e.latLng,
                         }).open(map);
                     });
@@ -120,14 +159,15 @@
                 .then(data => {
                     document.getElementById('dangerZones').innerHTML = (data.danger_zones || []).slice(0, 10).map(z => {
                         const color = z.score < 20 ? '#FF4757' : z.score < 30 ? '#FFA502' : '#E8D44D';
+                        const zoneLabel = z.zone_name ? ` — ${z.zone_name}` : '';
                         return `<div class="danger-item">
                             <div>
-                                <div style="font-size:13px; font-weight:600;">${z.name}</div>
+                                <div style="font-size:13px; font-weight:600;">${z.name}${zoneLabel}</div>
                                 <div style="font-size:11px; color:#6b7280;">${z.road_type} road</div>
                             </div>
                             <span style="font-weight:700; background:${color}20; color:${color}; padding:4px 10px; border-radius:6px;">${z.score}</span>
                         </div>`;
-                    }).join('');
+                    }).join('') || '<div style="padding:16px; color:#6b7280;">No danger zones detected at this hour</div>';
                 });
         }
 

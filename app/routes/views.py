@@ -28,3 +28,9 @@ def school():
 def admin():
     """City admin dashboard page."""
     return render_template('admin.html')
+
+
+@views_bp.route('/sos')
+def sos():
+    """Emergency SOS page with GPS and guardian SMS."""
+    return render_template('sos.html')
