@@ -1,5 +1,5 @@
 """
-SafeRoute — Safety Scoring Engine (v2 — Real Data)
+SafeNav — Safety Scoring Engine (v2 — Real Data)
 Computes safety scores for road segments based on 7 factors.
 Now uses real OSM attributes and Google Places POIs.
 """

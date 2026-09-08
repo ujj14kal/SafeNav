@@ -1,5 +1,5 @@
 """
-SafeRoute — Page Routes (serve HTML templates)
+SafeNav — Page Routes (serve HTML templates)
 """
 from flask import Blueprint, render_template
 

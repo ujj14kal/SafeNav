@@ -1,5 +1,5 @@
 """
-SafeRoute — SMS Service
+SafeNav — SMS Service
 Sends emergency SMS alerts to guardians via Twilio.
 Falls back to returning the SMS content if Twilio is not configured.
 """
@@ -45,7 +45,7 @@ def format_emergency_sms(
         f"Coordinates: {lat}, {lng}\n"
         f"Location captured at: {time_str}\n"
         f"\n"
-        f"This is an automated alert from SafeRoute. "
+        f"This is an automated alert from SafeNav. "
         f"Please try to contact {user_name} immediately or call local emergency services (100/112)."
     )
 

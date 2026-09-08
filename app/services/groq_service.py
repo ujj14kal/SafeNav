@@ -1,5 +1,5 @@
 """
-SafeRoute — Groq AI Service
+SafeNav — Groq AI Service
 Generates safety explanations and recommendations using Groq AI.
 """
 import os

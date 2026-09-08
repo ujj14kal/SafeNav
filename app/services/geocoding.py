@@ -1,5 +1,5 @@
 """
-SafeRoute — Geocoding Service
+SafeNav — Geocoding Service
 Converts lat/lng to real place names using Nominatim (OpenStreetMap).
 Free, no API key required. Caches results.
 """
@@ -32,7 +32,7 @@ def reverse_geocode(lat: float, lng: float) -> str:
                 'addressdetails': 1,
                 'zoom': 18,  # high detail
             },
-            headers={'User-Agent': 'SafeRoute/1.0 (women safety app)'},
+            headers={'User-Agent': 'SafeNav/1.0 (women safety app)'},
             timeout=5,
         )
         data = resp.json()

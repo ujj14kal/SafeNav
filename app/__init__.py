@@ -1,5 +1,5 @@
 """
-SafeRoute — Flask Application Factory (with SQLAlchemy DB)
+SafeNav — Flask Application Factory (with SQLAlchemy DB)
 """
 import os
 from flask import Flask
@@ -41,7 +41,7 @@ def create_app():
                 with db.engine.connect() as conn:
                     conn.execute(text('DROP TABLE guardian'))
                     conn.commit()
-                print('[SafeRoute] Dropped legacy guardian table')
+                print('[SafeNav] Dropped legacy guardian table')
             # Migrate: add missing columns to existing tables
             if 'incident' in existing:
                 columns = {col['name'] for col in inspector.get_columns('incident')}
@@ -49,7 +49,7 @@ def create_app():
                     with db.engine.connect() as conn:
                         conn.execute(text('ALTER TABLE incident ADD COLUMN location_name VARCHAR(256)'))
                         conn.commit()
-                    print('[SafeRoute] Migrated: added location_name to incident')
+                    print('[SafeNav] Migrated: added location_name to incident')
             if 'user' in existing:
                 columns = {col['name'] for col in inspector.get_columns('user')}
                 new_cols = {
@@ -65,9 +65,9 @@ def create_app():
                         with db.engine.connect() as conn:
                             conn.execute(text(f'ALTER TABLE user ADD COLUMN {col_name} {col_type}'))
                             conn.commit()
-                        print(f'[SafeRoute] Migrated: added {col_name} to user')
+                        print(f'[SafeNav] Migrated: added {col_name} to user')
         except Exception as e:
-            print(f'[SafeRoute] Table cleanup: {e}')
+            print(f'[SafeNav] Table cleanup: {e}')
         db.create_all()
         _seed_database(app)
 
@@ -86,7 +86,7 @@ def _seed_database(app):
     if LocationZone.query.count() > 0:
         return
 
-    print('[SafeRoute] Seeding database with Jaipur sample data...')
+    print('[SafeNav] Seeding database with Jaipur sample data...')
 
     # ── Admin user ──
     admin = User(
@@ -228,6 +228,6 @@ def _seed_database(app):
         db.session.add(fb)
 
     db.session.commit()
-    print(f'[SafeRoute] Seeded: {LocationZone.query.count()} zones, '
+    print(f'[SafeNav] Seeded: {LocationZone.query.count()} zones, '
           f'{Incident.query.count()} incidents, {SafetyFeedback.query.count()} feedback, '
           f'{User.query.count()} users')

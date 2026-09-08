@@ -1,5 +1,5 @@
 """
-SafeRoute — REST API Endpoints (v3 — DB-Backed, Centralized Scoring)
+SafeNav — REST API Endpoints (v3 — DB-Backed, Centralized Scoring)
 All safety calculations go through SafetyScoreEngine.
 Persistent storage via SQLAlchemy/SQLite.
 """
@@ -67,7 +67,7 @@ def _load_graph_data():
             pois = json.load(f)
         total_pois = sum(len(v) for v in pois.values())
         if total_pois > 0:
-            print(f'[SafeRoute] Loaded cached POIs: {total_pois} places')
+            print(f'[SafeNav] Loaded cached POIs: {total_pois} places')
         else:
             pois = {}
 
@@ -78,12 +78,12 @@ def _load_graph_data():
             pois = fetch_pois(lat, lng, radius_m=5000)
             total_pois = sum(len(v) for v in pois.values())
             if total_pois > 0:
-                print(f'[SafeRoute] Google Places: {total_pois} POIs fetched')
+                print(f'[SafeNav] Google Places: {total_pois} POIs fetched')
                 os.makedirs(os.path.dirname(pois_path), exist_ok=True)
                 with open(pois_path, 'w') as f:
                     json.dump(pois, f)
         except Exception as e:
-            print(f'[SafeRoute] Google Places failed: {e}')
+            print(f'[SafeNav] Google Places failed: {e}')
 
     # Load road network
     graph_data = None
@@ -91,21 +91,21 @@ def _load_graph_data():
         with open(data_path) as f:
             graph_data = json.load(f)
         _data_source = 'Cached JSON (pre-built)'
-        print(f'[SafeRoute] Loaded cached graph: {len(graph_data.get("nodes", {}))} nodes')
+        print(f'[SafeNav] Loaded cached graph: {len(graph_data.get("nodes", {}))} nodes')
         return RouteOptimizer(graph_data=graph_data, pois=pois)
 
     lat = float(os.environ.get('DEFAULT_LAT', '26.9124'))
     lng = float(os.environ.get('DEFAULT_LNG', '75.7873'))
     radius = 2000
 
-    print(f'[SafeRoute] Fetching road network for ({lat}, {lng}) ...')
+    print(f'[SafeNav] Fetching road network for ({lat}, {lng}) ...')
 
     try:
         graph_data = fetch_road_network(lat, lng, radius_m=radius)
         if graph_data:
             _data_source = 'OpenStreetMap (osmnx)'
     except Exception as e:
-        print(f'[SafeRoute] osmnx failed: {e}')
+        print(f'[SafeNav] osmnx failed: {e}')
 
     if not graph_data:
         try:
@@ -113,7 +113,7 @@ def _load_graph_data():
             if graph_data:
                 _data_source = 'OpenStreetMap (Overpass API)'
         except Exception as e:
-            print(f'[SafeRoute] Overpass failed: {e}')
+            print(f'[SafeNav] Overpass failed: {e}')
 
     if not graph_data:
         graph_data = _generate_graph_from_pois(lat, lng, pois)

@@ -1,5 +1,5 @@
 """
-SafeRoute — Centralized Safety Score Engine (v3)
+SafeNav — Centralized Safety Score Engine (v3)
 Single source of truth for ALL safety calculations across the app.
 
 Formula: base_score + feedback_adjustment + time_of_day_factor + incident_penalty

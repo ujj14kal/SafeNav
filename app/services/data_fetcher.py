@@ -1,5 +1,5 @@
 """
-SafeRoute — Real Data Fetcher
+SafeNav — Real Data Fetcher
 Pulls actual road network from OpenStreetMap (via osmnx)
 and real POIs from Google Places API.
 """

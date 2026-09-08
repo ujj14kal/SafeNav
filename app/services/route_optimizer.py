@@ -1,5 +1,5 @@
 """
-SafeRoute — Route Optimizer (v2 — Real Data)
+SafeNav — Route Optimizer (v2 — Real Data)
 Finds 3 routes (fastest, safest, balanced) using NetworkX.
 Now uses real OSM road data and Google Places POIs.
 """

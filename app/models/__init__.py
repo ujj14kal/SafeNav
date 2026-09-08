@@ -1,5 +1,5 @@
 """
-SafeRoute — Database Models Package
+SafeNav — Database Models Package
 """
 from app.models.database import (
     db, SafetyFeedback, Incident, Journey, Recording,

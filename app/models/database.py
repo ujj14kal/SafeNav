@@ -1,5 +1,5 @@
 """
-SafeRoute — SQLAlchemy Database Models
+SafeNav — SQLAlchemy Database Models
 All persistent data storage for safety feedback, incidents, journeys, recordings, zones, users.
 """
 from datetime import datetime

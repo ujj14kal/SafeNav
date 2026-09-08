@@ -1,5 +1,5 @@
 """
-SafeRoute — Entry Point
+SafeNav — Entry Point
 Run: python run.py
 """
 from app import create_app
@@ -7,7 +7,7 @@ from app import create_app
 app = create_app()
 
 if __name__ == '__main__':
-    print("\n🛡️  SafeRoute — Safe Route Recommendation System")
+    print("\n🛡️  SafeNav — Safe Route Recommendation System")
     print("=" * 50)
     print("📍 Route Planner:  http://localhost:5000")
     print("🔥 Heatmap:        http://localhost:5000/heatmap")
