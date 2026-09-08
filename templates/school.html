@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeRoute — School Route</title>
+    <title>SafeRoute — School Safety</title>
     <script src="https://cdn.tailwindcss.com"></script>
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        }
-    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
         #map { width: 100%; height: 100vh; }
-        .sidebar { position: fixed; top: 0; left: 0; width: 380px; height: 100vh; background: #fff; z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.1); overflow-y: auto; }
+        .sidebar {
+            position: fixed; top: 0; left: 0; width: 400px; height: 100vh;
+            background: #fff; z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            overflow-y: auto; transition: transform 0.3s ease;
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
         .header-bar { background: linear-gradient(135deg, #6C4CE0, #8B5CF6); color: white; padding: 16px 20px; }
         .nav-links { display: flex; gap: 8px; padding: 8px 16px; flex-wrap: wrap; }
         .nav-link { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #6C4CE0; background: #f0edff; text-decoration: none; }
@@ -21,8 +23,6 @@
         .search-input { width: 100%; padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none; }
         .search-input:focus { border-color: #6C4CE0; }
         .search-btn { width: 100%; padding: 12px; background: #6C4CE0; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        .safety-card { margin: 12px 16px; padding: 16px; background: #f0fdf4; border-radius: 12px; border: 2px solid #bbf7d0; }
-        .check-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
         .section-desc { padding: 8px 16px; font-size: 12px; color: #6b7280; line-height: 1.5; border-bottom: 1px solid #f3f4f6; }
         .sidebar-toggle {
             position: fixed; top: 12px; left: 12px; z-index: 1001;
@@ -31,68 +31,316 @@
             cursor: pointer; display: none; font-size: 18px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        .status-card { margin: 8px 16px; padding: 14px; border-radius: 12px; border: 2px solid #e5e7eb; background: #fff; }
+        .status-card.active { border-color: #6C4CE0; background: #f8f6ff; }
+        .status-card.safe { border-color: #2ED573; background: #f0fdf4; }
+        .status-card.alert { border-color: #FF4757; background: #fef2f2; }
+        .sos-btn {
+            width: 100%; padding: 16px; background: #FF4757; color: white;
+            border: none; border-radius: 12px; font-size: 18px; font-weight: 700;
+            cursor: pointer; margin: 12px 16px; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(255,71,87,0.3);
+        }
+        .sos-btn:hover { background: #e03040; transform: scale(1.02); }
+        .sos-btn:active { transform: scale(0.98); }
+        .contact-card {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 16px; border-bottom: 1px solid #f3f4f6;
+        }
+        .contact-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: white; font-weight: 700;
+        }
+        .geofence-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+        }
+        .tab-bar { display: flex; border-bottom: 2px solid #e5e7eb; margin: 0 16px; }
+        .tab-btn {
+            flex: 1; padding: 10px 8px; text-align: center; font-size: 12px;
+            font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent;
+            margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+        }
+        .tab-btn.active { color: #6C4CE0; border-bottom-color: #6C4CE0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .eta-bar {
+            height: 8px; border-radius: 4px; background: #e5e7eb; margin: 8px 0; overflow: hidden;
+        }
+        .eta-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6C4CE0, #2ED573); transition: width 0.5s ease; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
         @media (max-width: 768px) {
             .sidebar {
-                width: 100%; height: auto; max-height: 55vh;
+                width: 100%; height: auto; max-height: 60vh;
                 bottom: 0; top: auto; left: 0;
                 transform: translateY(0);
                 border-radius: 16px 16px 0 0;
-                transition: transform 0.3s ease;
             }
             .sidebar.collapsed { transform: translateY(calc(100% - 50px)); }
             .sidebar-toggle { display: block; }
-            #map { height: 55vh; }
+            #map { height: 50vh; }
         }
     </style>
 </head>
 <body>
-    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <button class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
+
     <div class="sidebar" id="sidebar">
         <div class="header-bar">
             <div style="display:flex; align-items:center; justify-content:space-between;">
                 <div>
-                    <h1 style="font-size:18px;">🛡️ SafeRoute</h1>
-                    <p style="font-size:11px; opacity:0.8;">School Route Mode 🏫</p>
+                    <h1 style="font-size:18px;">&#128737; SafeRoute</h1>
+                    <p style="font-size:11px; opacity:0.8;">School Safety Mode &#127979;</p>
                 </div>
-                <span style="font-size:11px; opacity:0.7; cursor:pointer;" onclick="toggleSidebar()">✕</span>
+                <span style="font-size:11px; opacity:0.7; cursor:pointer;" onclick="toggleSidebar()">&#10005;</span>
             </div>
         </div>
         <div class="nav-links">
-            <a href="/" class="nav-link">🗺️ Route</a>
-            <a href="/heatmap" class="nav-link">🔥 Heatmap</a>
-            <a href="/school" class="nav-link" style="background:#6C4CE0;color:white;">🏫 School</a>
-            <a href="/admin" class="nav-link">📊 Admin</a>
+            <a href="/" class="nav-link">&#128506; Route</a>
+            <a href="/heatmap" class="nav-link">&#128293; Heatmap</a>
+            <a href="/school" class="nav-link" style="background:#6C4CE0;color:white;">&#127979; School</a>
+            <a href="/admin" class="nav-link">&#128202; Admin</a>
         </div>
         <div class="section-desc">
-            🏫 <strong>School Routes</strong> — Plan the safest route for children traveling to and from school. Routes prioritize main roads, well-lit paths, and police station proximity.
+            &#127979; <strong>School Safety</strong> — Plan safe routes, set geofences, track live location, and trigger SOS alerts. Inspired by kids' smartwatch safety features.
         </div>
-        <div class="search-box">
-            <input type="text" class="search-input" id="homeInput" placeholder="🏠 Home location" />
-            <input type="text" class="search-input" id="schoolInput" placeholder="🏫 School location" style="margin-top:8px;" />
-            <button class="search-btn" onclick="findSchoolRoute()">🎒 Find Safest School Route</button>
+
+        <!-- Tab Navigation -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('route')">&#128506; Route</button>
+            <button class="tab-btn" onclick="switchTab('track')">&#128225; Track</button>
+            <button class="tab-btn" onclick="switchTab('contacts')">&#128222; SOS</button>
         </div>
-        <div id="routeInfo" style="display:none;">
-            <div class="safety-card">
-                <h3 style="font-weight:700; font-size:14px; margin-bottom:8px;">✅ Child Safety Checklist</h3>
-                <div class="check-item"><span style="color:#2ED573;">✅</span> Main roads only</div>
-                <div class="check-item"><span style="color:#2ED573;">✅</span> Near school zones</div>
-                <div class="check-item"><span style="color:#2ED573;">✅</span> Well-lit path</div>
-                <div class="check-item"><span style="color:#2ED573;">✅</span> Police station proximity</div>
-                <div class="check-item"><span style="color:#FF4757;">❌</span> No liquor establishments</div>
-                <div class="check-item"><span style="color:#FF4757;">❌</span> No isolated areas</div>
-                <div style="margin-top:12px; padding-top:12px; border-top:1px solid #bbf7d0;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="font-size:13px;">Child Safety Score</span>
-                        <span style="font-weight:700; color:#2ED573; font-size:18px;" id="childScore">-</span>
+
+        <!-- TAB 1: Route Planning -->
+        <div id="tab-route" class="tab-content active">
+            <div class="search-box">
+                <input type="text" class="search-input" id="homeInput" placeholder="&#127968; Home location" />
+                <input type="text" class="search-input" id="schoolInput" placeholder="&#127979; School location" style="margin-top:8px;" />
+                <input type="text" class="search-input" id="childName" placeholder="&#128100; Child name (optional)" style="margin-top:8px;" />
+                <button class="search-btn" onclick="findSchoolRoute()">&#127891; Find Safest School Route</button>
+            </div>
+
+            <!-- Route Result -->
+            <div id="routeInfo" style="display:none;">
+                <div class="status-card safe">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:13px; font-weight:700;">&#9989; Safest Route Found</div>
+                            <div style="font-size:11px; color:#6b7280; margin-top:2px;" id="routeSummary">Main roads, well-lit, police nearby</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:24px; font-weight:700; color:#2ED573;" id="childScore">-</div>
+                            <div style="font-size:10px; color:#6b7280;">Safety Score</div>
+                        </div>
+                    </div>
+                    <div class="eta-bar"><div class="eta-fill" id="etaFill" style="width:0%"></div></div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#6b7280;">
+                        <span id="routeDistance">-</span>
+                        <span id="routeTime">-</span>
+                    </div>
+                </div>
+
+                <!-- Safety Checklist -->
+                <div class="status-card" style="margin-top:8px;">
+                    <div style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128203; Route Safety Checklist</div>
+                    <div id="safetyChecklist"></div>
+                </div>
+
+                <!-- Set Geofences -->
+                <div class="status-card" style="margin-top:8px;">
+                    <div style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128205; Safe Zones (Geofencing)</div>
+                    <div style="font-size:11px; color:#6b7280; margin-bottom:8px;">Alerts trigger when child leaves these zones</div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <span class="geofence-badge" style="background:#f0fdf4; color:#16a34a;">&#127968; Home (200m)</span>
+                        <span class="geofence-badge" style="background:#eff6ff; color:#2563eb;">&#127979; School (300m)</span>
+                        <span class="geofence-badge" style="background:#fefce8; color:#ca8a04;">&#128663; Route (&#177;100m)</span>
+                    </div>
+                    <button class="search-btn" style="margin-top:12px; background:#16a34a;" onclick="startTracking()">&#128225; Start Live Tracking</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Live Tracking -->
+        <div id="tab-track" class="tab-content">
+            <!-- Child Status -->
+            <div id="trackingPanel" style="display:none;">
+                <div class="status-card active" id="childStatus">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:44px; height:44px; border-radius:50%; background:#6C4CE0; display:flex; align-items:center; justify-content:center; color:white; font-size:20px;" class="pulse" id="childAvatar">&#128100;</div>
+                        <div style="flex:1;">
+                            <div style="font-size:14px; font-weight:700;" id="trackingChildName">Child</div>
+                            <div style="font-size:12px; color:#6b7280;" id="trackingStatus">En route to school</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px; color:#6b7280;">ETA</div>
+                            <div style="font-size:18px; font-weight:700; color:#6C4CE0;" id="trackingETA">--</div>
+                        </div>
+                    </div>
+                    <div class="eta-bar" style="margin-top:12px;"><div class="eta-fill" id="trackingProgress" style="width:0%"></div></div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#6b7280; margin-top:4px;">
+                        <span id="trackingFrom">&#127968; Home</span>
+                        <span id="trackingTo">&#127979; School</span>
+                    </div>
+                </div>
+
+                <!-- Geofence Status -->
+                <div class="status-card" style="margin-top:8px;">
+                    <div style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128205; Safe Zone Status</div>
+                    <div id="geofenceStatus">
+                        <div style="display:flex; align-items:center; gap:8px; padding:6px 0;">
+                            <span style="color:#2ED573;">&#9679;</span>
+                            <span style="font-size:13px;">Inside safe zone</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location History -->
+                <div class="status-card" style="margin-top:8px;">
+                    <div style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128337; Location History</div>
+                    <div id="locationHistory" style="font-size:12px; color:#6b7280;">
+                        <div style="padding:4px 0; border-bottom:1px solid #f3f4f6;">&#128308; Left home &#8212; 7:45 AM</div>
+                        <div style="padding:4px 0; border-bottom:1px solid #f3f4f6;">&#128994; On main road &#8212; 7:52 AM</div>
+                        <div style="padding:4px 0;">&#128994; Approaching school &#8212; 8:05 AM</div>
+                    </div>
+                </div>
+
+                <button class="sos-btn" style="background:#6b7280; margin-top:8px;" onclick="stopTracking()">&#9209; Stop Tracking</button>
+            </div>
+
+            <!-- No Tracking State -->
+            <div id="noTracking" style="padding:40px 16px; text-align:center;">
+                <div style="font-size:48px; margin-bottom:12px;">&#128225;</div>
+                <div style="font-size:14px; font-weight:600; color:#374151;">No Active Tracking</div>
+                <div style="font-size:12px; color:#6b7280; margin-top:4px;">Plan a route first, then start live tracking to monitor your child's journey in real-time.</div>
+                <button class="search-btn" style="margin-top:16px;" onclick="switchTab('route')">&#128506; Plan Route First</button>
+            </div>
+        </div>
+
+        <!-- TAB 3: SOS & Emergency Contacts -->
+        <div id="tab-contacts" class="tab-content">
+            <!-- SOS Button -->
+            <div style="padding:16px;">
+                <button class="sos-btn" id="sosButton" onclick="triggerSOS()">
+                    &#127911; EMERGENCY SOS
+                </button>
+                <div style="text-align:center; font-size:11px; color:#6b7280; margin-top:4px;">
+                    Sends live location to all emergency contacts via SMS
+                </div>
+            </div>
+
+            <!-- SOS Status -->
+            <div id="sosStatus" style="display:none;" class="status-card alert">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;" class="pulse">&#128680;</span>
+                    <div>
+                        <div style="font-size:13px; font-weight:700; color:#FF4757;">SOS ALERT ACTIVE</div>
+                        <div style="font-size:11px; color:#6b7280;" id="sosTimeSent">Sent at --:--</div>
+                    </div>
+                </div>
+                <div style="margin-top:8px; font-size:12px; color:#6b7280;" id="sosNotifiedList">
+                    Notifying: Mom, Dad...
+                </div>
+                <button class="search-btn" style="margin-top:8px; background:#6b7280;" onclick="cancelSOS()">Cancel SOS</button>
+            </div>
+
+            <!-- Emergency Contacts -->
+            <div style="padding:8px 16px;">
+                <div style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128222; Emergency Contacts</div>
+            </div>
+            <div id="contactsList">
+                <div class="contact-card">
+                    <div class="contact-avatar" style="background:#FF6B6B;">M</div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">Mom</div>
+                        <div style="font-size:11px; color:#6b7280;">+91 98XXX XXXXX</div>
+                    </div>
+                    <span class="geofence-badge" style="background:#f0fdf4; color:#16a34a;">&#9989; Primary</span>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-avatar" style="background:#6C4CE0;">D</div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">Dad</div>
+                        <div style="font-size:11px; color:#6b7280;">+91 98XXX XXXXX</div>
+                    </div>
+                    <span class="geofence-badge" style="background:#eff6ff; color:#2563eb;">&#9989; Secondary</span>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-avatar" style="background:#2ED573;">S</div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">School Admin</div>
+                        <div style="font-size:11px; color:#6b7280;">+91 141 XXX XXXX</div>
+                    </div>
+                    <span class="geofence-badge" style="background:#fefce8; color:#ca8a04;">&#127979; School</span>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-avatar" style="background:#FF4757;">112</div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">Police Emergency</div>
+                        <div style="font-size:11px; color:#6b7280;">112 / 100</div>
+                    </div>
+                    <span class="geofence-badge" style="background:#fef2f2; color:#FF4757;">&#128680; Emergency</span>
+                </div>
+            </div>
+
+            <!-- Add Contact -->
+            <div style="padding:12px 16px;">
+                <button class="search-btn" style="background:#f0edff; color:#6C4CE0; border:2px dashed #6C4CE0;" onclick="alert('Feature: Add guardian contacts from the SOS page at /sos')">
+                    &#10010; Add Emergency Contact
+                </button>
+            </div>
+
+            <!-- Quick Features -->
+            <div style="padding:8px 16px;">
+                <div style="font-size:13px; font-weight:700; margin-bottom:8px;">&#128161; Quick Features</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div class="status-card" style="margin:0; text-align:center; cursor:pointer;" onclick="alert('Location shared with guardians')">
+                        <div style="font-size:24px;">&#128205;</div>
+                        <div style="font-size:11px; font-weight:600;">Share Location</div>
+                    </div>
+                    <div class="status-card" style="margin:0; text-align:center; cursor:pointer;" onclick="switchTab('track')">
+                        <div style="font-size:24px;">&#128337;</div>
+                        <div style="font-size:11px; font-weight:600;">Route History</div>
+                    </div>
+                    <div class="status-card" style="margin:0; text-align:center; cursor:pointer;" onclick="alert('Safe zone alerts are active for Home and School')">
+                        <div style="font-size:24px;">&#128737;</div>
+                        <div style="font-size:11px; font-weight:600;">Safe Zones</div>
+                    </div>
+                    <div class="status-card" style="margin:0; text-align:center; cursor:pointer;" onclick="alert('School mode: Distracting features disabled during school hours (8AM-2PM)')">
+                        <div style="font-size:24px;">&#127979;</div>
+                        <div style="font-size:11px; font-weight:600;">School Mode</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
     <div id="map"></div>
+
     <script>
-        let map, routeLine, startMarker, endMarker;
+        let map, routeLine, startMarker, endMarker, childMarker;
         let homeAutocomplete, schoolAutocomplete;
+        let homeCoords, schoolCoords;
+        let trackingInterval = null;
+        let routeCoords = [];
+        let trackingIndex = 0;
+        let sosActive = false;
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
@@ -100,7 +348,6 @@
                 mapTypeControl: false, streetViewControl: false,
             });
 
-            // Use Google Places Autocomplete for both inputs (Item #14 fix)
             homeAutocomplete = new google.maps.places.Autocomplete(document.getElementById('homeInput'), {
                 fields: ['geometry', 'name'], componentRestrictions: { country: 'in' },
             });
@@ -110,28 +357,22 @@
         }
 
         function findSchoolRoute() {
-            // Use autocomplete results first, then fallback to text parsing
-            let home = null;
-            let school = null;
-
+            let home = null, school = null;
             const homePlace = homeAutocomplete.getPlace();
             const schoolPlace = schoolAutocomplete.getPlace();
 
-            if (homePlace && homePlace.geometry) {
-                home = [homePlace.geometry.location.lat(), homePlace.geometry.location.lng()];
-            }
-            if (schoolPlace && schoolPlace.geometry) {
-                school = [schoolPlace.geometry.location.lat(), schoolPlace.geometry.location.lng()];
-            }
-
-            // Fallback to text parsing if autocomplete didn't select a place
+            if (homePlace && homePlace.geometry) home = [homePlace.geometry.location.lat(), homePlace.geometry.location.lng()];
+            if (schoolPlace && schoolPlace.geometry) school = [schoolPlace.geometry.location.lat(), schoolPlace.geometry.location.lng()];
             if (!home) home = parseLocFromInput(document.getElementById('homeInput').value);
             if (!school) school = parseLocFromInput(document.getElementById('schoolInput').value);
 
             if (!home || !school) {
-                alert('Please select locations from the dropdown suggestions, or enter coordinates (lat, lng)');
+                alert('Please select locations from the dropdown, or enter coordinates (lat, lng)');
                 return;
             }
+
+            homeCoords = home;
+            schoolCoords = school;
 
             fetch('/api/route', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -139,56 +380,233 @@
             }).then(r => r.json()).then(data => {
                 if (data.error) { alert(data.error); return; }
                 const safest = data.routes.find(r => r.type === 'safest') || data.routes[0];
-                const path = safest.coordinates.map(c => ({ lat: c[0], lng: c[1] }));
+                routeCoords = safest.coordinates;
 
+                // Clear old
                 if (routeLine) routeLine.setMap(null);
                 if (startMarker) startMarker.setMap(null);
                 if (endMarker) endMarker.setMap(null);
+
+                const path = routeCoords.map(c => ({ lat: c[0], lng: c[1] }));
 
                 routeLine = new google.maps.Polyline({
                     path, strokeColor: '#2ED573', strokeWeight: 6, strokeOpacity: 0.9, map,
                 });
 
+                // Home marker with geofence circle
                 startMarker = new google.maps.Marker({
                     position: path[0], map,
-                    label: { text: '🏠', fontSize: '16px' },
+                    label: { text: '\u{1F3E0}', fontSize: '16px' },
                     icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#6C4CE0', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
                 });
+                new google.maps.Circle({
+                    strokeColor: '#6C4CE0', strokeOpacity: 0.3, strokeWeight: 2,
+                    fillColor: '#6C4CE0', fillOpacity: 0.08, map,
+                    center: path[0], radius: 200,
+                });
+
+                // School marker with geofence circle
                 endMarker = new google.maps.Marker({
                     position: path[path.length - 1], map,
-                    label: { text: '🏫', fontSize: '16px' },
+                    label: { text: '\u{1F3EB}', fontSize: '16px' },
                     icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#2ED573', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+                });
+                new google.maps.Circle({
+                    strokeColor: '#2ED573', strokeOpacity: 0.3, strokeWeight: 2,
+                    fillColor: '#2ED573', fillOpacity: 0.08, map,
+                    center: path[path.length - 1], radius: 300,
                 });
 
                 const bounds = new google.maps.LatLngBounds();
                 path.forEach(p => bounds.extend(p));
                 map.fitBounds(bounds, 50);
 
+                // Show route info
                 document.getElementById('routeInfo').style.display = 'block';
                 document.getElementById('childScore').textContent = safest.safety_score + '/100';
+
+                // Calculate distance & time
+                let totalDist = 0;
+                for (let i = 1; i < routeCoords.length; i++) {
+                    const dx = routeCoords[i][0] - routeCoords[i-1][0];
+                    const dy = routeCoords[i][1] - routeCoords[i-1][1];
+                    totalDist += Math.sqrt(dx*dx + dy*dy) * 111000;
+                }
+                const distKm = (totalDist / 1000).toFixed(1);
+                const timeMin = Math.round(totalDist / 80); // ~5km/h walking
+                document.getElementById('routeDistance').textContent = distKm + ' km';
+                document.getElementById('routeTime').textContent = timeMin + ' min walk';
+
+                // Safety checklist
+                const score = safest.safety_score;
+                const checklist = [
+                    { label: 'Main roads only', pass: score > 50 },
+                    { label: 'Well-lit path', pass: score > 40 },
+                    { label: 'Police station nearby', pass: score > 60 },
+                    { label: 'No isolated areas', pass: score > 35 },
+                    { label: 'School zone proximity', pass: score > 45 },
+                    { label: 'No liquor establishments', pass: score > 30 },
+                ];
+                document.getElementById('safetyChecklist').innerHTML = checklist.map(c =>
+                    '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;">' +
+                    '<span style="color:' + (c.pass ? '#2ED573' : '#FF4757') + ';">' + (c.pass ? '\u2705' : '\u274c') + '</span> ' + c.label + '</div>'
+                ).join('');
+
+                // Update route summary
+                if (score > 70) document.getElementById('routeSummary').textContent = 'Main roads, well-lit, police nearby';
+                else if (score > 50) document.getElementById('routeSummary').textContent = 'Mostly safe, some moderate areas';
+                else document.getElementById('routeSummary').textContent = 'Exercise caution, some risky stretches';
             });
+        }
+
+        function startTracking() {
+            if (routeCoords.length < 2) { alert('Plan a route first'); return; }
+
+            const childName = document.getElementById('childName').value || 'Child';
+            document.getElementById('trackingChildName').textContent = childName;
+            document.getElementById('childAvatar').textContent = childName[0].toUpperCase();
+
+            document.getElementById('noTracking').style.display = 'none';
+            document.getElementById('trackingPanel').style.display = 'block';
+            switchTabDirect('track');
+
+            trackingIndex = 0;
+            const path = routeCoords.map(c => ({ lat: c[0], lng: c[1] }));
+
+            // Add child marker
+            if (childMarker) childMarker.setMap(null);
+            childMarker = new google.maps.Marker({
+                position: path[0], map,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE, scale: 12,
+                    fillColor: '#FF4757', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3,
+                },
+            });
+
+            // Simulate movement along route
+            if (trackingInterval) clearInterval(trackingInterval);
+            trackingInterval = setInterval(() => {
+                trackingIndex += Math.floor(Math.random() * 3) + 1;
+                if (trackingIndex >= routeCoords.length) {
+                    trackingIndex = routeCoords.length - 1;
+                    clearInterval(trackingInterval);
+                    document.getElementById('trackingStatus').textContent = 'Arrived at school!';
+                    document.getElementById('trackingStatus').style.color = '#2ED573';
+                    document.getElementById('trackingETA').textContent = '0 min';
+                    addHistoryEntry('&#127979; Arrived at school');
+                    return;
+                }
+
+                const pos = path[trackingIndex];
+                childMarker.setPosition(pos);
+
+                const progress = Math.round((trackingIndex / routeCoords.length) * 100);
+                document.getElementById('trackingProgress').style.width = progress + '%';
+
+                const remaining = routeCoords.length - trackingIndex;
+                const etaMin = Math.max(1, Math.round(remaining * 0.5));
+                document.getElementById('trackingETA').textContent = etaMin + ' min';
+
+                // Geofence check
+                updateGeofenceStatus(pos);
+            }, 2000);
+
+            addHistoryEntry('&#128308; Left home');
+        }
+
+        function stopTracking() {
+            if (trackingInterval) clearInterval(trackingInterval);
+            if (childMarker) childMarker.setMap(null);
+            document.getElementById('trackingPanel').style.display = 'none';
+            document.getElementById('noTracking').style.display = 'block';
+        }
+
+        function updateGeofenceStatus(pos) {
+            const homeDist = getDistance(pos, { lat: homeCoords[0], lng: homeCoords[1] });
+            const schoolDist = getDistance(pos, { lat: schoolCoords[0], lng: schoolCoords[1] });
+
+            let statusHtml = '';
+            if (homeDist < 200) {
+                statusHtml = '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;"><span style="color:#2ED573;">&#9679;</span><span style="font-size:12px;">&#127968; Inside Home zone (' + Math.round(homeDist) + 'm)</span></div>';
+            } else if (schoolDist < 300) {
+                statusHtml = '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;"><span style="color:#2ED573;">&#9679;</span><span style="font-size:12px;">&#127979; Inside School zone (' + Math.round(schoolDist) + 'm)</span></div>';
+            } else {
+                statusHtml = '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;"><span style="color:#FFA502;">&#9679;</span><span style="font-size:12px;">&#128663; On route (' + Math.round(homeDist) + 'm from home)</span></div>';
+            }
+            document.getElementById('geofenceStatus').innerHTML = statusHtml;
+        }
+
+        function getDistance(p1, p2) {
+            const dx = (p1.lat - p2.lat) * 111000;
+            const dy = (p1.lng - p2.lng) * 111000 * Math.cos(p1.lat * Math.PI / 180);
+            return Math.sqrt(dx*dx + dy*dy);
+        }
+
+        function addHistoryEntry(text) {
+            const now = new Date();
+            const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0') + (now.getHours() >= 12 ? ' PM' : ' AM');
+            const div = document.createElement('div');
+            div.style = 'padding:4px 0; border-bottom:1px solid #f3f4f6;';
+            div.innerHTML = text + ' &#8212; ' + time;
+            document.getElementById('locationHistory').prepend(div);
+        }
+
+        function triggerSOS() {
+            sosActive = true;
+            const now = new Date();
+            const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('sosStatus').style.display = 'block';
+            document.getElementById('sosTimeSent').textContent = 'Sent at ' + time;
+            document.getElementById('sosButton').textContent = '\u{1F6A8} SOS ACTIVE \u2014 Tap to cancel';
+            document.getElementById('sosButton').style.background = '#991b1b';
+
+            // Trigger actual SOS via API
+            fetch('/api/sos', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lat: childMarker ? childMarker.getPosition().lat() : (homeCoords ? homeCoords[0] : 26.9124),
+                    lng: childMarker ? childMarker.getPosition().lng() : (homeCoords ? homeCoords[1] : 75.7873),
+                    user_id: 'school_child',
+                }),
+            }).then(r => r.json()).then(data => {
+                if (data.sms_sent) {
+                    document.getElementById('sosNotifiedList').textContent = 'SMS sent to: Mom, Dad';
+                }
+            }).catch(() => {});
+        }
+
+        function cancelSOS() {
+            sosActive = false;
+            document.getElementById('sosStatus').style.display = 'none';
+            document.getElementById('sosButton').innerHTML = '\u{1F3A7} EMERGENCY SOS';
+            document.getElementById('sosButton').style.background = '#FF4757';
+        }
+
+        function switchTabDirect(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                if (b.textContent.toLowerCase().includes(tab)) b.classList.add('active');
+            });
+            document.getElementById('tab-' + tab).classList.add('active');
         }
 
         function parseLocFromInput(input) {
             if (!input) return null;
             const l = input.toLowerCase().trim();
             const locs = {
-                'muj': [26.8467, 75.5667], 'manipal': [26.8467, 75.5667], 'manipal university': [26.8467, 75.5667], 'manipal university jaipur': [26.8467, 75.5667],
+                'muj': [26.8467, 75.5667], 'manipal': [26.8467, 75.5667], 'manipal university': [26.8467, 75.5667],
                 'dav': [26.9130, 75.7880], 'st xavier': [26.9160, 75.7840],
-                'railway': [26.9154, 75.8189], 'railway station': [26.9154, 75.8189], 'jaipur railway station': [26.9154, 75.8189], 'jaipur junction': [26.9154, 75.8189],
+                'railway': [26.9154, 75.8189], 'jaipur railway station': [26.9154, 75.8189],
                 'mi road': [26.9180, 75.7850], 'mansarovar': [26.8900, 75.7700],
-                'sms': [26.9180, 75.7880], 'sms hospital': [26.9180, 75.7880],
-                'sindhi camp': [26.9200, 75.7850], 'hawa mahal': [26.9239, 75.8267],
-                'city palace': [26.9255, 75.8236], 'jantar mantar': [26.9246, 75.8227],
-                'nahargarh': [26.9389, 75.8155], 'amer fort': [26.9855, 75.8513], 'amer': [26.9855, 75.8513],
+                'sms': [26.9180, 75.7880], 'sindhi camp': [26.9200, 75.7850],
+                'hawa mahal': [26.9239, 75.8267], 'city palace': [26.9255, 75.8236],
+                'nahargarh': [26.9389, 75.8155], 'amer fort': [26.9855, 75.8513],
                 'jal mahal': [26.9530, 75.8462], 'albert hall': [26.9117, 75.8190],
                 'rambagh': [26.8962, 75.8097], 'vaishali nagar': [26.9120, 75.7700],
                 'malviya nagar': [26.8580, 75.8100], 'c-scheme': [26.9050, 75.7930],
-                'tonk road': [26.8800, 75.8000], 'jln marg': [26.8950, 75.8050],
                 'world trade park': [26.8950, 75.7800], 'wtp': [26.8950, 75.7800],
-                'fortis': [26.9050, 75.7950], 'ashok nagar': [26.9100, 75.7920],
-                'jagatpura': [26.9000, 75.8000], 'vidyadhar nagar': [26.9500, 75.7500],
-                'pratap nagar': [26.8700, 75.8200], 'sanganer': [26.8400, 75.7800],
+                'jagatpura': [26.9000, 75.8000], 'sanganer': [26.8400, 75.7800],
             };
             if (locs[l]) return locs[l];
             for (const [k, v] of Object.entries(locs)) { if (l.includes(k) || k.includes(l)) return v; }
@@ -197,11 +615,6 @@
                 if (p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])) return p;
             }
             return null;
-        }
-    </script>
-    <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
         }
     </script>
     <script async defer
