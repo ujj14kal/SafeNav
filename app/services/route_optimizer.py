@@ -7,6 +7,7 @@ import math
 import networkx as nx
 import numpy as np
 from app.services.safety_engine import SafetyEngine
+from app.services.geocoding import reverse_geocode
 
 
 class RouteOptimizer:
@@ -309,20 +310,81 @@ class RouteOptimizer:
         return {'type': 'FeatureCollection', 'features': features}
 
     def get_danger_zones(self, hour=12, limit=10):
-        """Get the most dangerous road segments."""
+        """Get the most dangerous road segments with proper coordinates."""
         self._update_costs_for_hour(hour)
         zones = []
 
         for u, v, data in self.graph.edges(data=True):
             score = data.get('safety_score', 50)
             if score < 40:
+                u_lat = self.graph.nodes[u].get('lat', 0)
+                u_lng = self.graph.nodes[u].get('lng', 0)
+                v_lat = self.graph.nodes[v].get('lat', 0)
+                v_lng = self.graph.nodes[v].get('lng', 0)
+                mid_lat = (u_lat + v_lat) / 2 if u_lat and v_lat else data.get('lat', 0)
+                mid_lng = (u_lng + v_lng) / 2 if u_lng and v_lng else data.get('lng', 0)
+
+                road_type = data.get('road_type', 'road')
                 zones.append({
-                    'name': data.get('name', '') or f"{u} → {v} ({data.get('road_type', 'road')})",
+                    'name': '',  # filled in below
                     'score': score,
-                    'road_type': data.get('road_type', 'unknown'),
-                    'lat': data.get('lat', 0),
-                    'lng': data.get('lng', 0),
+                    'road_type': road_type,
+                    'lat': mid_lat,
+                    'lng': mid_lng,
+                    'description': '',
                 })
 
         zones.sort(key=lambda x: x['score'])
-        return zones[:limit]
+        top_zones = zones[:limit]
+
+        # Reverse geocode ONLY the top zones (Nominatim rate-limited to 1/sec)
+        for z in top_zones:
+            geo_name = reverse_geocode(z['lat'], z['lng'])
+            if geo_name:
+                z['name'] = geo_name
+            else:
+                z['name'] = f"{z['road_type'].title()} road near ({z['lat']:.4f}, {z['lng']:.4f})"
+
+            score = z['score']
+            if score < 15:
+                z['description'] = "Extremely dangerous — poor lighting, no foot traffic, avoid at night"
+            elif score < 25:
+                z['description'] = "High risk zone — isolated area with minimal safety infrastructure"
+            elif score < 35:
+                z['description'] = "Unsafe stretch — exercise caution, travel in groups when possible"
+            elif score < 50:
+                z['description'] = "Moderate risk — stay alert, prefer well-lit main roads"
+            else:
+                z['description'] = "Relatively safe — standard precautions advised"
+
+        # Enrich with nearest DB zone name + direction
+        try:
+            from app.models.database import LocationZone
+            db_zones = LocationZone.query.all()
+            if db_zones:
+                for z in top_zones:
+                    if z['name'].startswith('Service road') or z['name'].startswith('Road'):
+                        # Find nearest named zone
+                        best_zone = None
+                        best_dist = float('inf')
+                        for dbz in db_zones:
+                            d = self.safety_engine.haversine(z['lat'], z['lng'], dbz.center_lat, dbz.center_lng)
+                            if d < best_dist:
+                                best_dist = d
+                                best_zone = dbz
+                        if best_zone and best_dist < 15000:  # within 15km
+                            # Determine direction
+                            dlat = z['lat'] - best_zone.center_lat
+                            dlng = z['lng'] - best_zone.center_lng
+                            dirs = []
+                            if abs(dlat) > 0.005:
+                                dirs.append('South' if dlat < 0 else 'North')
+                            if abs(dlng) > 0.005:
+                                dirs.append('West' if dlng < 0 else 'East')
+                            direction = '-'.join(dirs) if dirs else 'Near'
+                            km = round(best_dist / 1000, 1)
+                            z['name'] = f"{direction} of {best_zone.name} ({km}km)"
+        except Exception as e:
+            print(f'[RouteOptimizer] Zone enrichment error: {e}')
+
+        return top_zones
